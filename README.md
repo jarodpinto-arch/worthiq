@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # WorthIQ 💰
 
 **Your Personal Finance Command Center**
@@ -138,3 +139,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with ❤️ by the WorthIQ Team**
+=======
+# worthiq
+Personal Finance Command Center
+>>>>>>> e27afe8cc6565e335040bdac0f8da947372e84dd
