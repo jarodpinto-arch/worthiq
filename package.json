@@ -3,13 +3,23 @@
   "version": "1.0.0",
   "description": "Financial Dashboard with Plaid integration",
   "scripts": {
-    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start": "next start",
     "start:backend": "cd backend && npm run start:dev",
     "start:frontend": "cd frontend && npm start",
     "install:all": "cd backend && npm install && cd ../frontend && npm install",
-    "build": "cd frontend && npm run build"
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "prisma": "^7.5.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "@prisma/client": "^7.5.0",
+    "next": "^16.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   }
 }

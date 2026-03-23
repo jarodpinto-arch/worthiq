@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Query, Param, UseGuards, Request } from '@nestjs/common';
 import { PlaidService } from './plaid.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -14,40 +14,50 @@ export class PlaidController {
 
   @Post('exchange-public-token')
   async exchangePublicToken(
-    @Body() body: { publicToken: string },
+    @Body() body: { public_token: string },
     @Request() req,
   ) {
-    return this.plaidService.exchangePublicToken(body.publicToken, req.user.id);
+    return this.plaidService.exchangePublicToken(body.public_token, req.user.id);
   }
 
   @Get('accounts')
   async getAccounts(@Request() req) {
-    return this.plaidService.getAccountsForUser(req.user.id);
+    return this.plaidService.getAccounts(req.user.id);
   }
 
-  @Post('sync-accounts')
-  async syncAccounts(@Request() req) {
-    return this.plaidService.syncAccounts(req.user.id);
+  @Get('items')
+  async getItems(@Request() req) {
+    return this.plaidService.getItems(req.user.id);
   }
 
-  @Post('fetch-transactions')
-  async fetchTransactions(
-    @Body() body: { startDate: string; endDate: string },
+  @Delete('items/:id')
+  async disconnectItem(@Param('id') id: string, @Request() req) {
+    return this.plaidService.disconnectItem(id, req.user.id);
+  }
+
+  @Get('investment-transactions')
+  async getInvestmentTransactions(
     @Request() req,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
-    return this.plaidService.fetchTransactions(
-      req.user.id,
-      body.startDate,
-      body.endDate,
-    );
+    const end   = endDate   || new Date().toISOString().split('T')[0];
+    const start = startDate || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    return this.plaidService.getInvestmentTransactions(req.user.id, start, end);
   }
 
   @Get('transactions')
   async getTransactions(
+    @Request() req,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Request() req?,
   ) {
-    return this.plaidService.getTransactionsForUser(req.user.id, startDate, endDate);
+    const end = endDate || new Date().toISOString().split('T')[0];
+    const start =
+      startDate ||
+      new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
+    return this.plaidService.getTransactions(req.user.id, start, end);
   }
 }

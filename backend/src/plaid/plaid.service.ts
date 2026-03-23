@@ -1,6 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Configuration, PlaidApi, PlaidEnvironments, Products, CountryCode } from 'plaid';
+import {
+  Configuration,
+  PlaidApi,
+  PlaidEnvironments,
+  Products,
+  CountryCode,
+} from 'plaid';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -11,286 +17,206 @@ export class PlaidService {
     private configService: ConfigService,
     private prisma: PrismaService,
   ) {
-    const clientId = this.configService.get('PLAID_CLIENT_ID');
-    const secret = this.configService.get('PLAID_SECRET');
-
     const configuration = new Configuration({
-      basePath: PlaidEnvironments.sandbox,
+      basePath:
+        PlaidEnvironments[
+          this.configService.get<string>('PLAID_ENV') || 'sandbox'
+        ],
       baseOptions: {
         headers: {
-          'PLAID-CLIENT-ID': clientId,
-          'PLAID-SECRET': secret,
+          'PLAID-CLIENT-ID': this.configService.get('PLAID_CLIENT_ID'),
+          'PLAID-SECRET': this.configService.get('PLAID_SECRET'),
         },
       },
     });
-
     this.plaidClient = new PlaidApi(configuration);
   }
 
+  // Creates a Plaid Link token so the frontend can open the Link UI
   async createLinkToken(userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new Error('User not found. Please log in first.');
-    }
-
-    const request = {
-      user: {
-        client_user_id: userId,
-      },
-      client_name: 'Financial Dashboard',
-      products: [Products.Transactions],
+    const response = await this.plaidClient.linkTokenCreate({
+      user: { client_user_id: userId },
+      client_name: 'WorthIQ',
+      products: [Products.Transactions, Products.Investments],
       country_codes: [CountryCode.Us],
       language: 'en',
-    };
-
-    try {
-      const response = await this.plaidClient.linkTokenCreate(request);
-      return response.data;
-    } catch (error) {
-      console.error('Plaid API Error:', error.response?.data || error.message);
-      throw error;
-    }
+    });
+    return { link_token: response.data.link_token };
   }
 
+  // Exchanges the short-lived public_token from Plaid Link for a persistent access_token
+  // and stores it in the database linked to this user
   async exchangePublicToken(publicToken: string, userId: string) {
+    const response = await this.plaidClient.itemPublicTokenExchange({
+      public_token: publicToken,
+    });
+
+    const { access_token, item_id } = response.data;
+
+    // Fetch institution info for a friendly label
+    let institution: string | null = null;
     try {
-      const user = await this.prisma.user.findFirst({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        throw new Error('User not found. Please log in first.');
-      }
-
-      const exchangeResponse = await this.plaidClient.itemPublicTokenExchange({
-        public_token: publicToken,
-      });
-
-      const accessToken = exchangeResponse.data.access_token;
-      const itemId = exchangeResponse.data.item_id;
-
       const itemResponse = await this.plaidClient.itemGet({
-        access_token: accessToken,
+        access_token,
       });
-
       const institutionId = itemResponse.data.item.institution_id;
-      let institutionName = 'Unknown Bank';
-
       if (institutionId) {
-        const institutionResponse = await this.plaidClient.institutionsGetById({
+        const instResponse = await this.plaidClient.institutionsGetById({
           institution_id: institutionId,
           country_codes: [CountryCode.Us],
         });
-        institutionName = institutionResponse.data.institution.name;
+        institution = instResponse.data.institution.name;
       }
-
-      const item = await this.prisma.item.create({
-        data: {
-          userId: userId,
-          plaidItemId: itemId,
-          plaidAccessToken: accessToken,
-          institutionId: institutionId,
-          institutionName: institutionName,
-        },
-      });
-
-      const accountsResponse = await this.plaidClient.accountsGet({
-        access_token: accessToken,
-      });
-
-      const accounts = await Promise.all(
-        accountsResponse.data.accounts.map((account) =>
-          this.prisma.account.create({
-            data: {
-              itemId: item.id,
-              plaidAccountId: account.account_id,
-              name: account.name,
-              officialName: account.official_name,
-              type: account.type,
-              subtype: account.subtype,
-              mask: account.mask,
-              currentBalance: account.balances.current,
-              availableBalance: account.balances.available,
-              isoCurrencyCode: account.balances.iso_currency_code,
-            },
-          })
-        )
-      );
-
-      console.log(`✅ Saved ${accounts.length} accounts to database`);
-
-      return {
-        item,
-        accounts,
-      };
-    } catch (error) {
-      console.error('Exchange Token Error:', error.response?.data || error.message);
-      throw error;
+    } catch {
+      // Non-fatal: institution label is optional
     }
-  }
 
-  async getAccountsForUser(userId: string) {
-    const accounts = await this.prisma.account.findMany({
-      where: {
-        item: {
-          userId: userId,
-          status: 'active',
-        },
-      },
-      include: {
-        item: {
-          select: {
-            institutionName: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
+    const item = await this.prisma.plaidItem.create({
+      data: {
+        accessToken: access_token,
+        itemId: item_id,
+        institution,
+        userId,
       },
     });
 
-    return accounts;
+    return { success: true, item };
   }
 
-  async syncAccounts(userId: string) {
-    const items = await this.prisma.item.findMany({
-      where: {
-        userId: userId,
-        status: 'active',
-      },
+  // Returns all PlaidItems (linked institutions) for this user
+  async getItems(userId: string) {
+    const items = await this.prisma.plaidItem.findMany({
+      where: { userId },
+      select: { id: true, institution: true, itemId: true, createdAt: true },
     });
+    return { items };
+  }
+
+  // Disconnects a linked institution and removes it from the database
+  async disconnectItem(itemId: string, userId: string) {
+    const item = await this.prisma.plaidItem.findUnique({ where: { id: itemId } });
+    if (!item) throw new NotFoundException('Item not found');
+    if (item.userId !== userId) throw new ForbiddenException();
+
+    try {
+      await this.plaidClient.itemRemove({ access_token: item.accessToken });
+    } catch {
+      // Non-fatal: remove from DB even if Plaid call fails
+    }
+
+    await this.prisma.plaidItem.delete({ where: { id: itemId } });
+    return { success: true };
+  }
+
+  // Returns investment transactions (holdings, options, etc.) for this user
+  async getInvestmentTransactions(userId: string, startDate: string, endDate: string) {
+    const items = await this.prisma.plaidItem.findMany({ where: { userId } });
+    if (items.length === 0) return { investmentTransactions: [], securities: [] };
+
+    const allTx: any[] = [];
+    const allSecurities: any[] = [];
 
     for (const item of items) {
       try {
-        const accountsResponse = await this.plaidClient.accountsGet({
-          access_token: item.plaidAccessToken,
-        });
+        let offset = 0;
+        let hasMore = true;
 
-        for (const account of accountsResponse.data.accounts) {
-          await this.prisma.account.update({
-            where: {
-              plaidAccountId: account.account_id,
-            },
-            data: {
-              currentBalance: account.balances.current,
-              availableBalance: account.balances.available,
-            },
+        while (hasMore) {
+          const response = await this.plaidClient.investmentsTransactionsGet({
+            access_token: item.accessToken,
+            start_date: startDate,
+            end_date: endDate,
+            options: { offset, count: 500 },
           });
-        }
 
-        console.log(`✅ Synced accounts for item ${item.institutionName}`);
-      } catch (error) {
-        console.error(`Error syncing item ${item.id}:`, error.message);
+          const { investment_transactions, securities, total_investment_transactions } = response.data;
+          allTx.push(...investment_transactions.map(t => ({ ...t, institution: item.institution })));
+          allSecurities.push(...securities);
+          offset += investment_transactions.length;
+          hasMore = offset < total_investment_transactions;
+        }
+      } catch (err) {
+        // Investment product may not be enabled for this item — non-fatal
+        console.error(`[Plaid] Investment tx error for item ${item.id}:`, err.message);
       }
     }
 
-    return this.getAccountsForUser(userId);
+    // Deduplicate securities by security_id
+    const secMap = new Map(allSecurities.map(s => [s.security_id, s]));
+
+    return { investmentTransactions: allTx, securities: Array.from(secMap.values()) };
   }
 
-  async fetchTransactions(userId: string, startDate: string, endDate: string) {
-    const items = await this.prisma.item.findMany({
-      where: {
-        userId: userId,
-        status: 'active',
-      },
-    });
+  // Returns all transactions across every linked institution for this user
+  async getTransactions(userId: string, startDate: string, endDate: string) {
+    const items = await this.prisma.plaidItem.findMany({ where: { userId } });
 
-    let allTransactions: any[] = [];
+    if (items.length === 0) return { transactions: [] };
+
+    const allTransactions: any[] = [];
 
     for (const item of items) {
       try {
-        const transactionsResponse = await this.plaidClient.transactionsGet({
-          access_token: item.plaidAccessToken,
-          start_date: startDate,
-          end_date: endDate,
-        });
+        let offset = 0;
+        let hasMore = true;
 
-        const transactions = transactionsResponse.data.transactions;
-
-        for (const transaction of transactions) {
-          const account = await this.prisma.account.findUnique({
-            where: {
-              plaidAccountId: transaction.account_id,
-            },
+        while (hasMore) {
+          const response = await this.plaidClient.transactionsGet({
+            access_token: item.accessToken,
+            start_date: startDate,
+            end_date: endDate,
+            options: { offset, count: 500 },
           });
 
-          if (account) {
-            await this.prisma.transaction.upsert({
-              where: {
-                plaidTransactionId: transaction.transaction_id,
-              },
-              update: {
-                amount: transaction.amount,
-                date: new Date(transaction.date),
-                name: transaction.name,
-                merchantName: transaction.merchant_name,
-                category: transaction.category || [],
-                pending: transaction.pending,
-                paymentChannel: transaction.payment_channel,
-              },
-              create: {
-                itemId: item.id,
-                accountId: account.id,
-                plaidTransactionId: transaction.transaction_id,
-                amount: transaction.amount,
-                date: new Date(transaction.date),
-                name: transaction.name,
-                merchantName: transaction.merchant_name,
-                category: transaction.category || [],
-                pending: transaction.pending,
-                paymentChannel: transaction.payment_channel,
-              },
-            });
-          }
+          const { transactions, total_transactions } = response.data;
+          allTransactions.push(
+            ...transactions.map((t) => ({ ...t, institution: item.institution })),
+          );
+          offset += transactions.length;
+          hasMore = offset < total_transactions;
         }
-
-        allTransactions.push(...transactions);
-        console.log(`✅ Saved ${transactions.length} transactions from ${item.institutionName}`);
-      } catch (error) {
-        console.error(`Error fetching transactions for item ${item.id}:`, error.message);
+      } catch (err) {
+        console.error(
+          `[Plaid] Error fetching transactions for item ${item.id}:`,
+          err.message,
+        );
       }
     }
 
-    return this.getTransactionsForUser(userId, startDate, endDate);
+    return { transactions: allTransactions };
   }
 
-  async getTransactionsForUser(userId: string, startDate?: string, endDate?: string) {
-    const where: any = {
-      item: {
-        userId: userId,
-        status: 'active',
-      },
-    };
-
-    if (startDate || endDate) {
-      where.date = {};
-      if (startDate) where.date.gte = new Date(startDate);
-      if (endDate) where.date.lte = new Date(endDate);
-    }
-
-    const transactions = await this.prisma.transaction.findMany({
-      where,
-      include: {
-        account: {
-          select: {
-            name: true,
-            mask: true,
-          },
-        },
-        item: {
-          select: {
-            institutionName: true,
-          },
-        },
-      },
-      orderBy: {
-        date: 'desc',
-      },
+  // Returns all accounts across every linked institution for this user
+  async getAccounts(userId: string) {
+    const items = await this.prisma.plaidItem.findMany({
+      where: { userId },
     });
 
-    return transactions;
+    if (items.length === 0) {
+      return { accounts: [] };
+    }
+
+    const allAccounts: any[] = [];
+
+    for (const item of items) {
+      try {
+        const response = await this.plaidClient.accountsGet({
+          access_token: item.accessToken,
+        });
+        // Tag each account with the institution name for display
+        const accountsWithInstitution = response.data.accounts.map((acc) => ({
+          ...acc,
+          institution: item.institution,
+        }));
+        allAccounts.push(...accountsWithInstitution);
+      } catch (err) {
+        console.error(
+          `[Plaid] Error fetching accounts for item ${item.id}:`,
+          err.message,
+        );
+      }
+    }
+
+    return { accounts: allAccounts };
   }
 }

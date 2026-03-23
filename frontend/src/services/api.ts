@@ -55,20 +55,20 @@ class ApiService {
 
   // Auth endpoints
   async register(email: string, password: string, name?: string) {
-    const data = await this.request<{ token: string; user: any }>('/auth/register', {
+    const data = await this.request<{ access_token: string; user: any }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     });
-    this.setToken(data.token);
+    this.setToken(data.access_token);
     return data;
   }
 
   async login(email: string, password: string) {
-    const data = await this.request<{ token: string; user: any }>('/auth/login', {
+    const data = await this.request<{ access_token: string; user: any }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    this.setToken(data.token);
+    this.setToken(data.access_token);
     return data;
   }
 
@@ -91,7 +91,7 @@ class ApiService {
   async exchangePublicToken(publicToken: string) {
     return this.request<{ item: any; accounts: any[] }>('/plaid/exchange-public-token', {
       method: 'POST',
-      body: JSON.stringify({ publicToken }),
+      body: JSON.stringify({ public_token: publicToken }),
     });
   }
 
