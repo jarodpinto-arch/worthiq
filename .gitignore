@@ -35,3 +35,7 @@ coverage/
 # Misc
 *.pem
 .vercel
+
+# Next.js build
+.next/
+out/

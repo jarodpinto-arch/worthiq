@@ -1,3 +1,0 @@
-module.exports=[11101,a=>{"use strict";var b=a.i(57850),c=a.i(45056);a.s(["default",0,function(){let[a,d]=(0,c.useState)(null);return(0,b.jsx)("main",{className:"min-h-screen bg-slate-50 p-8 pt-24",children:(0,b.jsxs)("div",{className:"max-w-4xl mx-auto",children:[(0,b.jsx)("h1",{className:"text-4xl font-black text-slate-900 mb-2 italic",children:"WorthIQ"}),(0,b.jsx)("p",{className:"text-slate-500 mb-10 text-lg",children:"Guest Intelligence Portal"}),(0,b.jsx)("div",{className:"bg-white p-10 rounded-3xl shadow-xl border border-slate-200 min-h-[400px] flex items-center justify-center text-slate-400 font-medium",children:"AI Dashboard will appear here after your first query."})]})})}])}];
-
-//# sourceMappingURL=frontend_src_app_guest_page_tsx_0ty1nag._.js.map
