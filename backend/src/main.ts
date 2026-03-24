@@ -7,7 +7,12 @@ async function bootstrap() {
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   app.enableCors({
-    origin: [frontendUrl, 'http://localhost:3000'],
+    origin: [
+      'http://localhost:3000',
+      frontendUrl,
+      'https://worthiq.io',
+      'https://www.worthiq.io',
+    ].filter((v, i, a) => a.indexOf(v) === i), // dedupe
     credentials: true,
   });
 
