@@ -3,8 +3,10 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { useRouter } from 'next/navigation';
 import { Building2, Plus, Wallet, CreditCard, TrendingUp, ChevronLeft, Trash2 } from 'lucide-react';
+import { WorthIQLogo } from '../../components/WorthIQLogo';
+import { getApiBase } from '../../lib/api-base';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = getApiBase();
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
   depository: <Wallet    size={15} className="text-green-400" />,
@@ -153,26 +155,29 @@ export default function ConnectPage() {
   const hasAccounts = accounts.length > 0;
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-slate-300 p-6 lg:p-12">
-      <div className="max-w-2xl mx-auto">
-
+    <div className="min-h-screen bg-worthiq-surface p-6 text-slate-300 lg:p-12">
+      <div className="mx-auto max-w-2xl">
         <button
+          type="button"
           onClick={() => router.push('/dashboard')}
-          className="flex items-center gap-1.5 text-slate-500 hover:text-white transition-colors text-sm mb-8"
+          className="mb-6 flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-white"
         >
           <ChevronLeft size={16} />
           Back to Dashboard
         </button>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-black italic tracking-tighter text-white">
-            {hasAccounts ? 'Manage Accounts' : 'Connect Bank'}
-          </h1>
-          <p className="text-slate-500 text-sm mt-2">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <WorthIQLogo className="w-20 shrink-0 sm:w-24" />
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              {hasAccounts ? 'Manage Accounts' : 'Connect Bank'}
+            </h1>
+          <p className="mt-2 text-sm text-slate-500">
             {hasAccounts
               ? 'Your linked institutions are below. Add more or disconnect anytime.'
               : 'Link your bank, credit card, or brokerage to start tracking your finances.'}
           </p>
+          </div>
         </div>
 
         {error && (

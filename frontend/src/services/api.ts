@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+import { getApiBase } from '../lib/api-base';
+
+const API_BASE_URL = getApiBase();
 
 class ApiService {
   private token: string | null = null;

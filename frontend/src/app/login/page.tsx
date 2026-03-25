@@ -1,8 +1,10 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { WorthIQLogo } from '../../components/WorthIQLogo';
+import { getApiBase } from '../../lib/api-base';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = getApiBase();
 
 export default function Login() {
   const router = useRouter();
@@ -38,11 +40,13 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#0A0C10] p-6">
-      <div className="max-w-sm w-full space-y-6">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black italic tracking-tighter text-white">WorthIQ™</h1>
-          <p className="text-blue-500 text-xs font-bold uppercase tracking-[0.2em] mt-2">"See the Risk. Own the Reward."</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-worthiq-surface p-6">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <WorthIQLogo className="w-44" priority />
+          <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-worthiq-cyan">
+            See the Risk. Own the Reward.
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -52,7 +56,7 @@ export default function Login() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            className="w-full p-4 bg-[#11141B] border border-slate-800 text-white rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-600"
+            className="w-full rounded-2xl border border-slate-800 bg-worthiq-panel p-4 text-white outline-none placeholder:text-slate-600 focus:ring-2 focus:ring-worthiq-cyan"
           />
           <input
             type="password"
@@ -60,7 +64,7 @@ export default function Login() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            className="w-full p-4 bg-[#11141B] border border-slate-800 text-white rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-600"
+            className="w-full rounded-2xl border border-slate-800 bg-worthiq-panel p-4 text-white outline-none placeholder:text-slate-600 focus:ring-2 focus:ring-worthiq-cyan"
           />
 
           {error && <p className="text-red-400 text-sm text-center">{error}</p>}
@@ -68,7 +72,7 @@ export default function Login() {
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50"
+            className="w-full rounded-2xl bg-worthiq-cyan py-4 font-bold text-black transition hover:brightness-110 disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
@@ -76,11 +80,11 @@ export default function Login() {
 
         <div className="text-center space-y-2">
           <p className="text-slate-500 text-sm">
-            <a href="/forgot-password" className="text-slate-400 hover:text-blue-400 transition-colors">Forgot password?</a>
+            <a href="/forgot-password" className="text-slate-400 transition-colors hover:text-worthiq-cyan">Forgot password?</a>
           </p>
           <p className="text-slate-500 text-sm">
             Don't have an account?{' '}
-            <a href="/signup" className="text-blue-500 font-bold hover:text-blue-400">Sign up</a>
+            <a href="/signup" className="font-bold text-worthiq-cyan hover:text-white">Sign up</a>
           </p>
         </div>
       </div>

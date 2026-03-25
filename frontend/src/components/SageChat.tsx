@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, Trash2, Sparkles, ChevronDown, Plus, Loader2 } from 'lucide-react';
 import WidgetCard from './WidgetCard';
+import { getApiBase } from '../lib/api-base';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = getApiBase();
 
 interface TextMessage {
   role: 'user' | 'assistant';

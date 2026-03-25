@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { useRouter } from 'next/navigation';
 import { Landmark, MousePointer2, Sparkles, PencilLine } from 'lucide-react';
+import { getApiBase } from '../../../../src/lib/api-base';
 
 export default function ConnectPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -11,7 +12,7 @@ export default function ConnectPage() {
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        const res = await fetch('http://localhost:3001/plaid/create-link-token', {
+        const res = await fetch(`${getApiBase()}/plaid/create-link-token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: 'jarod-pinto-dev' }),
