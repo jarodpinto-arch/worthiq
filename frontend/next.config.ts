@@ -1,18 +1,10 @@
 import type { NextConfig } from "next";
 
-/** Server-side only. Set in Vercel to your Railway (or other) API origin, no trailing slash. */
-const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
-
-const nextConfig: NextConfig = {
-  async rewrites() {
-    if (!backendUrl) return [];
-    return [
-      {
-        source: "/api/backend/:path*",
-        destination: `${backendUrl}/:path*`,
-      },
-    ];
-  },
-};
+/**
+ * API proxy lives in `src/app/api/backend/[[...path]]/route.ts` so BACKEND_URL
+ * is read at request time on Vercel. Rewrites in this file only see env at build
+ * time and caused 404s when BACKEND_URL was missing during `next build`.
+ */
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
