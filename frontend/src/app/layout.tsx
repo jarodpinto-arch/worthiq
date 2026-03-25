@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import SageChat from "../components/SageChat";
 
 export const metadata: Metadata = {
-  title: "WorthIQ",
+  title: "WorthIQ™",
   description: "See the Risk. Own the Reward.",
 };
 

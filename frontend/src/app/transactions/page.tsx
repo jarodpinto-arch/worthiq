@@ -223,7 +223,7 @@ export default function TransactionsPage() {
       {/* ── SIDEBAR ── */}
       <aside className="w-20 lg:w-64 border-r border-slate-800 flex flex-col items-center lg:items-start p-6 gap-8 shrink-0">
         <div onClick={() => router.push('/')} className="cursor-pointer hover:opacity-80 transition-all">
-          <span className="hidden lg:block text-2xl font-black italic tracking-tighter text-white">WorthIQ</span>
+          <span className="hidden lg:block text-2xl font-black italic tracking-tighter text-white">WorthIQ™</span>
           <span className="lg:hidden text-2xl font-black italic tracking-tighter text-white">WIQ</span>
         </div>
         <nav className="flex-1 w-full space-y-1">

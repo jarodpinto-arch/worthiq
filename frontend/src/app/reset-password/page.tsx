@@ -60,7 +60,7 @@ function ResetPasswordForm() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#0A0C10] p-6">
       <div className="max-w-sm w-full space-y-6">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-black italic tracking-tighter text-white">WorthIQ</h1>
+          <h1 className="text-4xl font-black italic tracking-tighter text-white">WorthIQ™</h1>
           <p className="text-blue-500 text-xs font-bold uppercase tracking-[0.2em] mt-2">Set New Password</p>
         </div>
 

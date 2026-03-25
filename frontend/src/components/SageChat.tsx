@@ -390,7 +390,7 @@ export default function SageChat() {
                 {loading ? <Loader2 size={12} className="animate-spin text-white" /> : <Send size={13} className="text-white" />}
               </button>
             </div>
-            <p className="text-[10px] text-slate-700 text-center mt-2">Sage · WorthIQ Financial AI</p>
+            <p className="text-[10px] text-slate-700 text-center mt-2">Sage · WorthIQ™ Financial AI</p>
           </div>
         </div>
       )}
