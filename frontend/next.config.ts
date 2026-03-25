@@ -1,10 +1,13 @@
 import type { NextConfig } from "next";
 
 /**
- * API proxy lives in `src/app/api/backend/[[...path]]/route.ts` so BACKEND_URL
- * is read at request time on Vercel. Rewrites in this file only see env at build
- * time and caused 404s when BACKEND_URL was missing during `next build`.
+ * Monorepo: parent `package-lock.json` can make Next infer the wrong app root on Vercel.
+ * Pin Turbopack to this directory so routes (including `pages/api`) resolve correctly.
  */
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  turbopack: {
+    root: process.cwd(),
+  },
+};
 
 export default nextConfig;
