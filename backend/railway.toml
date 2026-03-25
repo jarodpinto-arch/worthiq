@@ -1,6 +1,7 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npx prisma generate && npm run build"
+# Must install devDependencies: @nestjs/cli lives there; plain "npm install" in CI omits them.
+buildCommand = "npm ci --include=dev && npx prisma generate && npm run build"
 
 [deploy]
 startCommand = "npx prisma migrate deploy && node dist/main"
