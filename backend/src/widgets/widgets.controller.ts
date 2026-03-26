@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Patch, Body, Param, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Patch,
+  Body,
+  Param,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { WidgetsService } from './widgets.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -14,7 +25,8 @@ export class WidgetsController {
 
   @Post()
   async createWidget(
-    @Body() body: { type: string; title: string; config: any; position?: number },
+    @Body()
+    body: { type: string; title: string; config: any; position?: number },
     @Request() req,
   ) {
     return this.widgetsService.createWidget(req.user.id, body);

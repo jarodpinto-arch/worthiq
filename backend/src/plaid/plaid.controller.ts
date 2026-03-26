@@ -1,4 +1,14 @@
-import { Controller, Post, Get, Delete, Body, Query, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Body,
+  Query,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { PlaidService } from './plaid.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -17,7 +27,10 @@ export class PlaidController {
     @Body() body: { public_token: string },
     @Request() req,
   ) {
-    return this.plaidService.exchangePublicToken(body.public_token, req.user.id);
+    return this.plaidService.exchangePublicToken(
+      body.public_token,
+      req.user.id,
+    );
   }
 
   @Get('accounts')
@@ -41,8 +54,12 @@ export class PlaidController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const end   = endDate   || new Date().toISOString().split('T')[0];
-    const start = startDate || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const end = endDate || new Date().toISOString().split('T')[0];
+    const start =
+      startDate ||
+      new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
     return this.plaidService.getInvestmentTransactions(req.user.id, start, end);
   }
 

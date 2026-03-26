@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   Configuration,
@@ -94,7 +98,9 @@ export class PlaidService {
 
   // Disconnects a linked institution and removes it from the database
   async disconnectItem(itemId: string, userId: string) {
-    const item = await this.prisma.plaidItem.findUnique({ where: { id: itemId } });
+    const item = await this.prisma.plaidItem.findUnique({
+      where: { id: itemId },
+    });
     if (!item) throw new NotFoundException('Item not found');
     if (item.userId !== userId) throw new ForbiddenException();
 
@@ -109,9 +115,14 @@ export class PlaidService {
   }
 
   // Returns investment transactions (holdings, options, etc.) for this user
-  async getInvestmentTransactions(userId: string, startDate: string, endDate: string) {
+  async getInvestmentTransactions(
+    userId: string,
+    startDate: string,
+    endDate: string,
+  ) {
     const items = await this.prisma.plaidItem.findMany({ where: { userId } });
-    if (items.length === 0) return { investmentTransactions: [], securities: [] };
+    if (items.length === 0)
+      return { investmentTransactions: [], securities: [] };
 
     const allTx: any[] = [];
     const allSecurities: any[] = [];
@@ -129,22 +140,40 @@ export class PlaidService {
             options: { offset, count: 500 },
           });
 
-          const { investment_transactions, securities, total_investment_transactions } = response.data;
-          allTx.push(...investment_transactions.map(t => ({ ...t, institution: item.institution })));
+          const {
+            investment_transactions,
+            securities,
+            total_investment_transactions,
+          } = response.data;
+          allTx.push(
+            ...investment_transactions.map((t) => ({
+              ...t,
+              institution: item.institution,
+            })),
+          );
           allSecurities.push(...securities);
           offset += investment_transactions.length;
           hasMore = offset < total_investment_transactions;
         }
       } catch (err) {
         // Investment product may not be enabled for this item — non-fatal
-        console.error(`[Plaid] Investment tx error for item ${item.id}:`, err.message);
+        // Plaid SDK errors often contain a helpful response payload. Log it so we can
+        // distinguish "product not enabled", bad dates, invalid access token, etc.
+        const anyErr = err;
+        console.error(
+          `[Plaid] Investment tx error for item ${item.id}:`,
+          anyErr?.response?.data || anyErr?.message || anyErr,
+        );
       }
     }
 
     // Deduplicate securities by security_id
-    const secMap = new Map(allSecurities.map(s => [s.security_id, s]));
+    const secMap = new Map(allSecurities.map((s) => [s.security_id, s]));
 
-    return { investmentTransactions: allTx, securities: Array.from(secMap.values()) };
+    return {
+      investmentTransactions: allTx,
+      securities: Array.from(secMap.values()),
+    };
   }
 
   // Returns all transactions across every linked institution for this user
@@ -170,7 +199,10 @@ export class PlaidService {
 
           const { transactions, total_transactions } = response.data;
           allTransactions.push(
-            ...transactions.map((t) => ({ ...t, institution: item.institution })),
+            ...transactions.map((t) => ({
+              ...t,
+              institution: item.institution,
+            })),
           );
           offset += transactions.length;
           hasMore = offset < total_transactions;

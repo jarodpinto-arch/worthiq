@@ -22,11 +22,16 @@ export class SageService {
     if (transactions.length === 0) return { classifications: {} };
 
     const existing = await this.prisma.transactionClassification.findMany({
-      where: { userId, transactionId: { in: transactions.map(t => t.transaction_id) } },
+      where: {
+        userId,
+        transactionId: { in: transactions.map((t) => t.transaction_id) },
+      },
     });
 
-    const existingIds = new Set(existing.map(e => e.transactionId));
-    const toClassify = transactions.filter(t => !existingIds.has(t.transaction_id));
+    const existingIds = new Set(existing.map((e) => e.transactionId));
+    const toClassify = transactions.filter(
+      (t) => !existingIds.has(t.transaction_id),
+    );
 
     if (toClassify.length > 0) {
       const BATCH = 50;
@@ -35,20 +40,27 @@ export class SageService {
         batches.push(toClassify.slice(i, i + BATCH));
       }
       // Run all batches in parallel — dramatically faster for large transaction sets
-      await Promise.allSettled(batches.map(batch => this.classifyBatch(userId, batch)));
+      await Promise.allSettled(
+        batches.map((batch) => this.classifyBatch(userId, batch)),
+      );
     }
 
     const all = await this.prisma.transactionClassification.findMany({
-      where: { userId, transactionId: { in: transactions.map(t => t.transaction_id) } },
+      where: {
+        userId,
+        transactionId: { in: transactions.map((t) => t.transaction_id) },
+      },
     });
 
     const map: Record<string, any> = {};
-    all.forEach(c => { map[c.transactionId] = c; });
+    all.forEach((c) => {
+      map[c.transactionId] = c;
+    });
     return { classifications: map };
   }
 
   private async classifyBatch(userId: string, transactions: any[]) {
-    const list = transactions.map(t => ({
+    const list = transactions.map((t) => ({
       id: t.transaction_id,
       name: t.name,
       merchant: t.merchant_name ?? null,
@@ -73,11 +85,14 @@ ${JSON.stringify(list)}`;
         messages: [{ role: 'user', content: prompt }],
       });
 
-      const block = response.content.find(c => c.type === 'text');
+      const block = response.content.find((c) => c.type === 'text');
       if (!block || !('text' in block)) return;
 
       // Strip any markdown code fences Claude might add
-      const raw = block.text.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+      const raw = block.text
+        .trim()
+        .replace(/^```(?:json)?\n?/, '')
+        .replace(/\n?```$/, '');
       const parsed = JSON.parse(raw);
       const results: { id: string; category: string }[] = parsed.results ?? [];
 
@@ -100,11 +115,17 @@ ${JSON.stringify(list)}`;
       where: { userId },
     });
     const map: Record<string, any> = {};
-    all.forEach(c => { map[c.transactionId] = c; });
+    all.forEach((c) => {
+      map[c.transactionId] = c;
+    });
     return { classifications: map };
   }
 
-  async setUserCategory(userId: string, transactionId: string, category: string) {
+  async setUserCategory(
+    userId: string,
+    transactionId: string,
+    category: string,
+  ) {
     return this.prisma.transactionClassification.upsert({
       where: { transactionId_userId: { transactionId, userId } },
       create: { transactionId, userId, userCategory: category },
@@ -122,7 +143,10 @@ ${JSON.stringify(list)}`;
     });
 
     const messages: { role: 'user' | 'assistant'; content: string }[] = [
-      ...history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      ...history.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
       { role: 'user', content: message },
     ];
 
@@ -146,8 +170,9 @@ Rules:
         messages,
       });
 
-      const block = response.content.find(c => c.type === 'text');
-      const reply = block && 'text' in block ? block.text : 'Signal lost. Try again.';
+      const block = response.content.find((c) => c.type === 'text');
+      const reply =
+        block && 'text' in block ? block.text : 'Signal lost. Try again.';
 
       await this.prisma.chatMessage.createMany({
         data: [
@@ -226,10 +251,14 @@ Return ONLY a valid JSON object with this exact structure, no explanation or mar
         messages: [{ role: 'user', content: prompt }],
       });
 
-      const block = response.content.find(c => c.type === 'text');
-      if (!block || !('text' in block)) throw new Error('No response from Sage');
+      const block = response.content.find((c) => c.type === 'text');
+      if (!block || !('text' in block))
+        throw new Error('No response from Sage');
 
-      const raw = block.text.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+      const raw = block.text
+        .trim()
+        .replace(/^```(?:json)?\n?/, '')
+        .replace(/\n?```$/, '');
       const parsed = JSON.parse(raw);
       return { widget: parsed };
     } catch (err) {

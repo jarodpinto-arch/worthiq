@@ -1,18 +1,26 @@
 "use client";
-import React, { useState } from 'react';
 import Link from 'next/link';
+import { WorthIQLogo } from '../../components/WorthIQLogo';
 
 export default function GuestPage() {
-  const [aiResponse, setAiResponse] = useState(null);
-
   return (
-    <main className="min-h-screen bg-slate-50 p-8 pt-24">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-black text-slate-900 mb-2 italic">WorthIQ™</h1>
-        <p className="text-slate-500 mb-10 text-lg">Guest Intelligence Portal</p>
-        
-        <div className="bg-white p-10 rounded-3xl shadow-xl border border-slate-200 min-h-[400px] flex items-center justify-center text-slate-400 font-medium">
-          AI Dashboard will appear here after your first query.
+    <main className="min-h-screen bg-worthiq-surface p-8 pt-16 text-slate-300">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-10 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <WorthIQLogo className="w-40" priority />
+            <p className="mt-3 text-sm text-slate-500">Guest intelligence portal</p>
+          </div>
+          <Link
+            href="/"
+            className="text-sm font-semibold text-worthiq-cyan hover:text-white"
+          >
+            ← Home
+          </Link>
+        </div>
+
+        <div className="flex min-h-[400px] items-center justify-center rounded-3xl border border-slate-800 bg-worthiq-panel p-10 text-center font-medium text-slate-500 shadow-xl">
+          AI dashboard will appear here after your first query.
         </div>
       </div>
     </main>

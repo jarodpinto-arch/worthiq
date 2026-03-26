@@ -61,7 +61,8 @@ export class AuthService {
   async forgotPassword(email: string) {
     // Always return success so we don't leak whether an email exists
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) return { message: 'If that email exists, a reset link has been sent.' };
+    if (!user)
+      return { message: 'If that email exists, a reset link has been sent.' };
 
     // Invalidate any existing unused tokens for this user
     await this.prisma.passwordResetToken.updateMany({
@@ -92,7 +93,9 @@ export class AuthService {
     });
 
     if (!record || record.used || record.expiresAt < new Date()) {
-      throw new BadRequestException('This reset link is invalid or has expired.');
+      throw new BadRequestException(
+        'This reset link is invalid or has expired.',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);

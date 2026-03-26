@@ -4,7 +4,7 @@
  * Local (.env.local): NEXT_PUBLIC_API_URL=http://localhost:3001
  *
  * Production (Vercel): avoid CORS by proxying through Next:
- *   BACKEND_URL=https://your-service.up.railway.app   (server-only, for rewrites)
+ *   BACKEND_URL=https://your-api.example.com   (server-only, for /api/backend proxy)
  *   NEXT_PUBLIC_API_URL=/api/backend
  */
 export function getApiBase(): string {

@@ -1,25 +1,45 @@
-import Link from 'next/link';
+import Link from "next/link";
+import { WorthIQLogo } from "../components/WorthIQLogo";
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white px-6 text-center">
-      <h1 className="text-6xl font-black text-slate-900 mb-2 italic tracking-tighter italic">WorthIQ™</h1>
-      <p className="text-slate-500 mb-12 text-xl font-medium tracking-tight">Master your capital with AI.</p>
-      
-      <div className="flex flex-col gap-4 w-full max-w-sm">
-        <Link href="/login" className="bg-black text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-center">
+      <div className="mb-10 flex flex-col items-center gap-6">
+        <WorthIQLogo className="w-48 sm:w-56" priority />
+        <p className="max-w-md text-sm font-medium tracking-wide text-slate-400">
+          See the Risk. Own the Reward.
+        </p>
+      </div>
+
+      <div className="flex w-full max-w-sm flex-col gap-3">
+        <Link
+          href="/login"
+          className="rounded-2xl bg-worthiq-cyan py-4 font-bold text-black shadow-lg shadow-worthiq-cyan/20 transition hover:brightness-110"
+        >
           Log In
         </Link>
-        <Link href="/signup" className="border-2 border-slate-100 py-4 rounded-2xl font-bold hover:bg-slate-50 transition-all text-slate-900">
+        <Link
+          href="/signup"
+          className="rounded-2xl border border-slate-800 py-4 font-bold text-white transition hover:border-slate-600 hover:bg-white/5"
+        >
           Create Account
         </Link>
-        
-        <div className="relative my-8">
-          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100"></span></div>
-          <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-4 text-slate-400 font-bold tracking-widest">Experience the AI</span></div>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-slate-800" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-black px-4 font-bold tracking-widest text-slate-600">
+              Experience the AI
+            </span>
+          </div>
         </div>
 
-        <Link href="/guest" className="text-blue-600 font-bold hover:text-blue-700 text-lg transition-colors">
+        <Link
+          href="/guest"
+          className="text-base font-semibold text-worthiq-cyan transition hover:text-white"
+        >
           Continue as Guest →
         </Link>
       </div>

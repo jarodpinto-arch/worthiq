@@ -41,7 +41,10 @@ export class EmailService {
       });
       this.logger.log(`Password reset email sent to ${toEmail}`);
     } catch (err) {
-      this.logger.error(`Failed to send reset email to ${toEmail}:`, err.message);
+      this.logger.error(
+        `Failed to send reset email to ${toEmail}:`,
+        err.message,
+      );
       throw err;
     }
   }

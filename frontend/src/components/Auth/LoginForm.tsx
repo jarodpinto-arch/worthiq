@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { WorthIQLogo } from '../WorthIQLogo';
 
 interface LoginFormProps {
   onToggleMode: () => void;
@@ -31,33 +32,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
   const displayError = localError || error;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-blue-600">
-            <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome Back
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your Financial Dashboard
-          </p>
+    <div className="flex min-h-screen items-center justify-center bg-worthiq-surface px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8">
+        <div className="flex flex-col items-center text-center">
+          <WorthIQLogo className="w-40" priority />
+          <h2 className="mt-6 text-2xl font-bold text-white">Welcome back</h2>
+          <p className="mt-2 text-sm text-slate-500">Sign in to your financial dashboard</p>
         </div>
 
-        <form className="mt-8 space-y-6 bg-white p-8 rounded-xl shadow-lg" onSubmit={handleSubmit}>
+        <form className="space-y-6 rounded-2xl border border-slate-800 bg-worthiq-panel p-8 shadow-xl" onSubmit={handleSubmit}>
           {displayError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
               {displayError}
             </div>
           )}
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-400">
+                Email address
               </label>
               <input
                 id="email"
@@ -67,13 +60,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="relative block w-full appearance-none rounded-xl border border-slate-700 bg-black/30 px-4 py-3 text-white placeholder:text-slate-600 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-worthiq-cyan"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-400">
                 Password
               </label>
               <input
@@ -84,7 +77,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="relative block w-full appearance-none rounded-xl border border-slate-700 bg-black/30 px-4 py-3 text-white placeholder:text-slate-600 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-worthiq-cyan"
                 placeholder="Enter your password"
               />
             </div>
@@ -94,7 +87,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+              className="group relative flex w-full justify-center rounded-xl border border-transparent bg-worthiq-cyan px-4 py-3 text-sm font-bold text-black transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-worthiq-cyan focus:ring-offset-2 focus:ring-offset-worthiq-panel disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? (
                 <span className="flex items-center">
@@ -111,12 +104,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
           </div>
 
           <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+            <p className="text-sm text-slate-500">
+              Don&apos;t have an account?{' '}
               <button
                 type="button"
                 onClick={onToggleMode}
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                className="font-semibold text-worthiq-cyan transition-colors hover:text-white"
               >
                 Create one now
               </button>

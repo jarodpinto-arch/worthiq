@@ -1,13 +1,23 @@
 import type { NextConfig } from "next";
+import fs from "fs";
+import path from "path";
 
 /**
- * Monorepo: parent `package-lock.json` can make Next infer the wrong app root on Vercel.
- * Pin Turbopack to this directory so routes (including `pages/api`) resolve correctly.
+ * /api/backend/* is proxied by `src/app/api/backend/[...path]/route.ts` (runtime env).
+ * Do not use next.config rewrites for that path — BACKEND_URL can be missing when the
+ * config module first loads on Vercel, which produces empty rewrites and a 404.
  */
+function tracingRoot(): string {
+  const parent = path.resolve(process.cwd(), "..");
+  try {
+    return fs.realpathSync(parent);
+  } catch {
+    return process.cwd();
+  }
+}
+
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: process.cwd(),
-  },
+  ...(!process.env.VERCEL ? { outputFileTracingRoot: tracingRoot() } : {}),
 };
 
 export default nextConfig;

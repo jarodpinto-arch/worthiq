@@ -1,6 +1,13 @@
 import {
-  Controller, Get, Post, Patch, Delete,
-  Body, Param, Request, UseGuards,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { SageService } from './sage.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -12,7 +19,10 @@ export class SageController {
 
   @Post('classify')
   async classify(@Body() body: { transactions: any[] }, @Request() req) {
-    return this.sageService.classifyTransactions(req.user.id, body.transactions);
+    return this.sageService.classifyTransactions(
+      req.user.id,
+      body.transactions,
+    );
   }
 
   @Get('classifications')
@@ -26,7 +36,11 @@ export class SageController {
     @Body() body: { category: string },
     @Request() req,
   ) {
-    return this.sageService.setUserCategory(req.user.id, transactionId, body.category);
+    return this.sageService.setUserCategory(
+      req.user.id,
+      transactionId,
+      body.category,
+    );
   }
 
   @Post('chat')
@@ -45,7 +59,14 @@ export class SageController {
   }
 
   @Post('create-widget')
-  async createWidget(@Body() body: { prompt: string; context: any }, @Request() req) {
-    return this.sageService.createWidget(req.user.id, body.prompt, body.context);
+  async createWidget(
+    @Body() body: { prompt: string; context: any },
+    @Request() req,
+  ) {
+    return this.sageService.createWidget(
+      req.user.id,
+      body.prompt,
+      body.context,
+    );
   }
 }

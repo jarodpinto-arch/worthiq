@@ -3,12 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --worthiq-black: #000000;
+  --worthiq-surface: #0a0c10;
+  --worthiq-cyan: #46c2e9;
+  --worthiq-bull: #52b788;
+  --worthiq-bear: #e63946;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: white;
+  color: #e2e8f0;
+  background: var(--worthiq-surface);
 }
