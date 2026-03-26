@@ -18,11 +18,16 @@ export class SageController {
   constructor(private sageService: SageService) {}
 
   @Post('classify')
-  async classify(@Body() body: { transactions: any[] }, @Request() req) {
-    return this.sageService.classifyTransactions(
-      req.user.id,
-      body.transactions,
-    );
+  async classify(
+    @Body()
+    body: {
+      transactions?: any[];
+      investment_transactions?: any[];
+      force?: boolean;
+    },
+    @Request() req,
+  ) {
+    return this.sageService.classifyTransactions(req.user.id, body);
   }
 
   @Get('classifications')

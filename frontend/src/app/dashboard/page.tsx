@@ -452,7 +452,15 @@ export default function Dashboard() {
                       No investment transactions found for the past year. Options and trade activity will appear here once available.
                     </InfoBanner>
                   ) : (
-                    <InvestmentTxTable transactions={investmentTx} securities={securities} />
+                    <div className="space-y-8">
+                      <OptionsInsightsPanel transactions={investmentTx} securities={securities} />
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">
+                          Recent activity
+                        </p>
+                        <InvestmentTxTable transactions={investmentTx} securities={securities} />
+                      </div>
+                    </div>
                   )}
                 </Section>
               )}
@@ -697,6 +705,109 @@ function AccountGrid({ accounts, showUtilization }: { accounts: any[]; showUtili
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function OptionsInsightsPanel({
+  transactions,
+  securities,
+}: {
+  transactions: any[];
+  securities: any[];
+}) {
+  const secMap = new Map(securities.map((s) => [s.security_id, s]));
+  const fmtN = (n: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+
+  let optionTrades = 0;
+  let stockEtfTrades = 0;
+  let buyCount = 0;
+  let sellCount = 0;
+  const tickerAgg = new Map<string, { trades: number; notional: number }>();
+  let netCash = 0;
+
+  for (const tx of transactions) {
+    const sec = secMap.get(tx.security_id);
+    const t = (tx.type || '').toLowerCase();
+    const st = (tx.subtype || '').toLowerCase();
+    const isOption =
+      sec?.type === 'derivative' || st.includes('option') || (sec?.name || '').toLowerCase().includes('option');
+    if (isOption) optionTrades += 1;
+    else stockEtfTrades += 1;
+    if (t === 'buy') buyCount += 1;
+    if (t === 'sell') sellCount += 1;
+    netCash += Number(tx.amount) || 0;
+    const sym = sec?.ticker_symbol || 'Other';
+    const cur = tickerAgg.get(sym) || { trades: 0, notional: 0 };
+    cur.trades += 1;
+    cur.notional += Math.abs(Number(tx.amount) || 0);
+    tickerAgg.set(sym, cur);
+  }
+
+  const topTickers = Array.from(tickerAgg.entries())
+    .sort((a, b) => b[1].trades - a[1].trades)
+    .slice(0, 6);
+
+  const uniqueTickers = tickerAgg.size;
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-slate-400 leading-relaxed max-w-3xl">
+        Snapshot of your linked brokerage activity (last year). Options-heavy flows are highlighted; figures are from
+        Plaid and are informational only — not tax or investment advice.
+      </p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-[#11141B] border border-slate-800 rounded-xl p-4">
+          <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mb-1">Total trades</p>
+          <p className="text-2xl font-black text-white tabular-nums">{transactions.length}</p>
+          <p className="text-[11px] text-slate-600 mt-1">{uniqueTickers} symbols touched</p>
+        </div>
+        <div className="bg-[#11141B] border border-slate-800 rounded-xl p-4">
+          <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mb-1">Options vs other</p>
+          <p className="text-2xl font-black text-yellow-400 tabular-nums">{optionTrades}</p>
+          <p className="text-[11px] text-slate-600 mt-1">{stockEtfTrades} stock / ETF legs</p>
+        </div>
+        <div className="bg-[#11141B] border border-slate-800 rounded-xl p-4">
+          <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mb-1">Buys · sells</p>
+          <p className="text-lg font-black text-white tabular-nums">
+            <span className="text-green-400">{buyCount}</span>
+            <span className="text-slate-600 mx-1">/</span>
+            <span className="text-red-400">{sellCount}</span>
+          </p>
+          <p className="text-[11px] text-slate-600 mt-1">By Plaid type field</p>
+        </div>
+        <div className="bg-[#11141B] border border-slate-800 rounded-xl p-4">
+          <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mb-1">Net cash flow</p>
+          <p
+            className={`text-2xl font-black tabular-nums ${
+              netCash < 0 ? 'text-green-400' : netCash > 0 ? 'text-red-300' : 'text-slate-400'
+            }`}
+          >
+            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
+              netCash,
+            )}
+          </p>
+          <p className="text-[11px] text-slate-600 mt-1">Sum of signed Plaid amounts</p>
+        </div>
+      </div>
+      {topTickers.length > 0 && (
+        <div className="bg-[#11141B] border border-slate-800 rounded-xl p-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">Most active symbols</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {topTickers.map(([sym, v]) => (
+              <div key={sym} className="flex items-center justify-between gap-3 rounded-lg bg-[#0D1117] border border-slate-800/80 px-3 py-2.5">
+                <span className="font-mono font-bold text-white text-sm">{sym}</span>
+                <div className="text-right text-[11px] text-slate-500">
+                  <span className="text-slate-300 font-mono">{v.trades}</span> trades
+                  <span className="text-slate-600 mx-1">·</span>
+                  <span className="text-slate-400 font-mono">{fmtN(v.notional)}</span> notional
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

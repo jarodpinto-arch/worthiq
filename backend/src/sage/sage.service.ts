@@ -18,38 +18,75 @@ export class SageService {
 
   // ── Classification ────────────────────────────────────────────────────────
 
-  async classifyTransactions(userId: string, transactions: any[]) {
-    if (transactions.length === 0) return { classifications: {} };
+  async classifyTransactions(
+    userId: string,
+    body: {
+      transactions?: any[];
+      investment_transactions?: any[];
+      force?: boolean;
+    },
+  ) {
+    const spend = body.transactions ?? [];
+    const inv = body.investment_transactions ?? [];
+    const force = body.force === true;
+
+    const spendIds = spend.map((t) => t.transaction_id).filter(Boolean);
+    const invIds = inv.map((t) => t.investment_transaction_id).filter(Boolean);
+    const allIds = [...new Set([...spendIds, ...invIds])];
+
+    if (allIds.length === 0) return { classifications: {} };
+
+    if (force) {
+      await this.prisma.transactionClassification.deleteMany({
+        where: { userId, transactionId: { in: allIds } },
+      });
+    }
 
     const existing = await this.prisma.transactionClassification.findMany({
-      where: {
-        userId,
-        transactionId: { in: transactions.map((t) => t.transaction_id) },
-      },
+      where: { userId, transactionId: { in: allIds } },
     });
-
-    const existingIds = new Set(existing.map((e) => e.transactionId));
-    const toClassify = transactions.filter(
-      (t) => !existingIds.has(t.transaction_id),
+    const existingMap = new Map(
+      existing.map((e) => [e.transactionId, e] as const),
     );
 
-    if (toClassify.length > 0) {
+    const toClassifySpend = force
+      ? spend
+      : spend.filter((t) => !existingMap.get(t.transaction_id)?.aiCategory);
+
+    const toClassifyInv = force
+      ? inv
+      : inv.filter(
+          (t) => !existingMap.get(t.investment_transaction_id)?.aiCategory,
+        );
+
+    const runSpendBatches = async (items: any[]) => {
+      if (items.length === 0) return;
       const BATCH = 50;
       const batches: any[][] = [];
-      for (let i = 0; i < toClassify.length; i += BATCH) {
-        batches.push(toClassify.slice(i, i + BATCH));
+      for (let i = 0; i < items.length; i += BATCH) {
+        batches.push(items.slice(i, i + BATCH));
       }
-      // Run all batches in parallel — dramatically faster for large transaction sets
       await Promise.allSettled(
         batches.map((batch) => this.classifyBatch(userId, batch)),
       );
-    }
+    };
+
+    const runInvBatches = async (items: any[]) => {
+      if (items.length === 0) return;
+      const BATCH = 40;
+      const batches: any[][] = [];
+      for (let i = 0; i < items.length; i += BATCH) {
+        batches.push(items.slice(i, i + BATCH));
+      }
+      await Promise.allSettled(
+        batches.map((batch) => this.classifyInvestmentBatch(userId, batch)),
+      );
+    };
+
+    await Promise.all([runSpendBatches(toClassifySpend), runInvBatches(toClassifyInv)]);
 
     const all = await this.prisma.transactionClassification.findMany({
-      where: {
-        userId,
-        transactionId: { in: transactions.map((t) => t.transaction_id) },
-      },
+      where: { userId, transactionId: { in: allIds } },
     });
 
     const map: Record<string, any> = {};
@@ -107,6 +144,57 @@ ${JSON.stringify(list)}`;
       );
     } catch (err) {
       console.error('[Sage] classify error:', err.message);
+    }
+  }
+
+  private async classifyInvestmentBatch(userId: string, transactions: any[]) {
+    const list = transactions.map((t) => ({
+      id: t.investment_transaction_id,
+      name: t.name,
+      amount: t.amount,
+      type: t.type,
+      subtype: t.subtype,
+      ticker: t.ticker_symbol ?? null,
+    }));
+
+    const prompt = `Classify these brokerage / investment account activity lines into short, specific labels.
+
+Use categories such as: Stock Buy, Stock Sell, ETF Buy, ETF Sell, Options - Call Open, Options - Call Close, Options - Put Open, Options - Put Close, Dividend, Interest, Crypto Buy, Crypto Sell, Margin Interest, Fee, Cash Transfer, Corporate Action, Other.
+
+Respond ONLY with valid JSON, no explanation or markdown:
+{"results": [{"id": "investment_transaction_id", "category": "Category Name"}]}
+
+Activity lines:
+${JSON.stringify(list)}`;
+
+    try {
+      const response = await this.anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }],
+      });
+
+      const block = response.content.find((c) => c.type === 'text');
+      if (!block || !('text' in block)) return;
+
+      const raw = block.text
+        .trim()
+        .replace(/^```(?:json)?\n?/, '')
+        .replace(/\n?```$/, '');
+      const parsed = JSON.parse(raw);
+      const results: { id: string; category: string }[] = parsed.results ?? [];
+
+      await Promise.all(
+        results.map(({ id, category }) =>
+          this.prisma.transactionClassification.upsert({
+            where: { transactionId_userId: { transactionId: id, userId } },
+            create: { transactionId: id, userId, aiCategory: category },
+            update: { aiCategory: category },
+          }),
+        ),
+      );
+    } catch (err) {
+      console.error('[Sage] classify investment error:', err.message);
     }
   }
 
