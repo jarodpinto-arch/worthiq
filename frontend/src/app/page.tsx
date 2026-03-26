@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MarketingBackdrop } from "../components/MarketingBackdrop";
 import { WorthIQLogoNav } from "../components/WorthIQLogoNav";
+import { markHomeHero, ringOffsetBlack } from "../lib/worthiq-logo-mark";
 
 export default function Home() {
   return (
@@ -10,10 +11,10 @@ export default function Home() {
       <main className="relative z-10 mx-auto flex min-h-[100dvh] max-w-lg flex-col justify-center px-6 pb-16 pt-[max(2.5rem,env(safe-area-inset-top))] sm:px-8">
         <div className="animate-logo-settle flex flex-col items-center">
           <WorthIQLogoNav
-            className="w-full sm:w-[min(22rem,90vw)] md:w-[min(28rem,85vw)]"
+            className={markHomeHero}
             variant="hero"
             priority
-            wrapperClassName="max-w-full focus-visible:ring-offset-black"
+            wrapperClassName={`max-w-full ${ringOffsetBlack}`}
           />
           <p className="animate-fade-up-delay-1 mt-8 max-w-sm text-center text-[11px] font-bold uppercase tracking-[0.28em] text-worthiq-cyan">
             See the Risk. Own the Reward.

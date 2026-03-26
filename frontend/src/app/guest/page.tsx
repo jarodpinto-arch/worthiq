@@ -1,6 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
+import { markGuest, ringOffsetApp } from '../../lib/worthiq-logo-mark';
 
 export default function GuestPage() {
   return (
@@ -8,7 +9,7 @@ export default function GuestPage() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-10 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <WorthIQLogoNav className="w-44 sm:w-52" priority />
+            <WorthIQLogoNav className={markGuest} priority wrapperClassName={ringOffsetApp} />
             <p className="mt-3 text-sm text-slate-400">Guest intelligence portal</p>
           </div>
           <Link

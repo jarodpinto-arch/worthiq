@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
+import { markAuthStandalone, ringOffsetApp } from '../../lib/worthiq-logo-mark';
 import { getApiBase } from '../../lib/api-base';
 
 function ResetPasswordForm() {
@@ -60,7 +61,7 @@ function ResetPasswordForm() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-worthiq-surface p-6">
       <div className="w-full max-w-sm space-y-6">
         <div className="mb-8 flex flex-col items-center text-center">
-          <WorthIQLogoNav className="w-48 sm:w-56" priority />
+          <WorthIQLogoNav className={markAuthStandalone} priority wrapperClassName={ringOffsetApp} />
           <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-worthiq-cyan">Set new password</p>
         </div>
 

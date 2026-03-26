@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { WorthIQLogoNav } from "../WorthIQLogoNav";
+import { markAuthBurst, ringOffsetBlack } from "../../lib/worthiq-logo-mark";
 
 type Phase = "burst" | "main";
 
@@ -97,9 +98,9 @@ export function AuthBrandScreen({ children, tagline, subtitle }: AuthBrandScreen
                 }`}
               >
                 <WorthIQLogoNav
-                  className="w-64 sm:w-80 md:w-[22rem]"
+                  className={markAuthBurst}
                   priority
-                  wrapperClassName={`max-w-full focus-visible:ring-offset-black transition-[filter] duration-700 ${
+                  wrapperClassName={`max-w-full ${ringOffsetBlack} transition-[filter] duration-700 ${
                     phase === "main"
                       ? "drop-shadow-[0_0_42px_rgba(70,194,233,0.42)]"
                       : "drop-shadow-[0_0_88px_rgba(70,194,233,0.58)]"

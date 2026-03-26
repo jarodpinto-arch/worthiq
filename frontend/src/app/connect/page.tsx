@@ -4,6 +4,7 @@ import { usePlaidLink } from 'react-plaid-link';
 import { useRouter } from 'next/navigation';
 import { Building2, Plus, Wallet, CreditCard, TrendingUp, ChevronLeft, Trash2 } from 'lucide-react';
 import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
+import { markConnect, ringOffsetApp } from '../../lib/worthiq-logo-mark';
 import { getApiBase } from '../../lib/api-base';
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
@@ -165,7 +166,7 @@ export default function ConnectPage() {
         </button>
 
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <WorthIQLogoNav className="w-20 shrink-0 sm:w-24" />
+          <WorthIQLogoNav className={markConnect} wrapperClassName={ringOffsetApp} />
           <div className="min-w-0">
             <h1 className="text-3xl font-bold tracking-tight text-white">
               {hasAccounts ? 'Manage Accounts' : 'Connect Bank'}

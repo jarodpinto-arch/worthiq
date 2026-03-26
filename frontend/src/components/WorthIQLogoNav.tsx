@@ -36,10 +36,10 @@ export function WorthIQLogoNav({ wrapperClassName, className, ...logoProps }: Wo
   return (
     <Link
       href={href}
-      className={`group inline-flex max-w-full shrink-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#46c2e9]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0c10] ${wrapperClassName ?? ""}`.trim()}
+      className={`group inline-flex max-w-full shrink-0 rounded-md bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-[#46c2e9]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0c10] ${wrapperClassName ?? ""}`.trim()}
       aria-label={href === "/dashboard" ? "WorthIQ — go to dashboard" : "WorthIQ — home"}
     >
-      <span className="inline-flex origin-center transition-[transform,filter] duration-300 ease-out will-change-transform group-hover:scale-[1.05] group-hover:brightness-110 group-active:scale-[0.96] motion-reduce:transform-none motion-reduce:transition-none">
+      <span className="inline-flex origin-center bg-transparent transition-[transform,filter] duration-300 ease-out will-change-transform group-hover:scale-[1.06] group-hover:brightness-110 group-active:scale-[0.96] motion-reduce:transform-none motion-reduce:transition-none">
         <WorthIQLogo {...logoProps} className={className} />
       </span>
     </Link>

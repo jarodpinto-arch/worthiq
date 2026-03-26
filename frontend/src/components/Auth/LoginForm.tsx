@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { WorthIQLogoNav } from '../WorthIQLogoNav';
+import { markAuthStandalone, ringOffsetApp } from '../../lib/worthiq-logo-mark';
 
 interface LoginFormProps {
   onToggleMode: () => void;
@@ -35,7 +36,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
     <div className="flex min-h-screen items-center justify-center bg-worthiq-surface px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center text-center">
-          <WorthIQLogoNav className="w-48 sm:w-56" priority />
+          <WorthIQLogoNav className={markAuthStandalone} priority wrapperClassName={ringOffsetApp} />
           <h2 className="mt-6 text-2xl font-bold text-white">Welcome back</h2>
           <p className="mt-2 text-sm text-slate-500">Sign in to your financial dashboard</p>
         </div>

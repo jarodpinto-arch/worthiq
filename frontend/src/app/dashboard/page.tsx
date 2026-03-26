@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import WidgetCard from '../../components/WidgetCard';
 import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
+import { markAppHeader, markSidebar, ringOffsetApp } from '../../lib/worthiq-logo-mark';
 import { getApiBase } from '../../lib/api-base';
 const PINNED_KEY = 'worthiq_pinned_tabs';
 
@@ -253,10 +254,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#0A0C10] text-slate-300 flex">
       {/* ── SIDEBAR ── */}
       <aside className="w-20 lg:w-64 border-r border-slate-800 flex flex-col items-center lg:items-start p-6 gap-8 shrink-0">
-        <WorthIQLogoNav
-          className="w-10 lg:w-32"
-          wrapperClassName="rounded-lg p-1 focus-visible:ring-offset-[#0A0C10]"
-        />
+        <WorthIQLogoNav className={markSidebar} wrapperClassName={ringOffsetApp} />
 
         <nav className="flex-1 w-full space-y-1">
           <NavItem icon={<LayoutDashboard size={19} />} label="Dashboard" active />
@@ -288,7 +286,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-6 mb-8">
           <div>
-            <WorthIQLogoNav className="w-44 sm:w-56" wrapperClassName="focus-visible:ring-offset-[#0A0C10]" />
+            <WorthIQLogoNav className={markAppHeader} wrapperClassName={ringOffsetApp} />
             <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.2em] text-worthiq-cyan">
               Financial Intelligence
             </p>

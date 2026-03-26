@@ -7,6 +7,7 @@ import {
   ChevronUp, ChevronDown, ChevronsUpDown, Sparkles, Search, SlidersHorizontal, X,
 } from 'lucide-react';
 import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
+import { markAppHeader, markSidebar, ringOffsetApp } from '../../lib/worthiq-logo-mark';
 import { getApiBase } from '../../lib/api-base';
 const COLS_KEY = 'worthiq_tx_columns';
 
@@ -222,10 +223,7 @@ export default function TransactionsPage() {
     <div className="min-h-screen bg-[#0A0C10] text-slate-300 flex">
       {/* ── SIDEBAR ── */}
       <aside className="w-20 lg:w-64 border-r border-slate-800 flex flex-col items-center lg:items-start p-6 gap-8 shrink-0">
-        <WorthIQLogoNav
-          className="w-10 lg:w-32"
-          wrapperClassName="rounded-lg p-1 focus-visible:ring-offset-[#0A0C10]"
-        />
+        <WorthIQLogoNav className={markSidebar} wrapperClassName={ringOffsetApp} />
         <nav className="flex-1 w-full space-y-1">
           <NavItem icon={<LayoutDashboard size={19} />} label="Dashboard"    onClick={() => router.push('/dashboard')} />
           <NavItem icon={<BarChart2 size={19} />}       label="Views"        onClick={() => router.push('/views')} />
@@ -246,7 +244,8 @@ export default function TransactionsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-6 mb-6">
           <div>
-            <h1 className="text-4xl font-black italic tracking-tighter text-white">Transactions</h1>
+            <WorthIQLogoNav className={markAppHeader} wrapperClassName={ringOffsetApp} />
+            <h1 className="mt-4 text-4xl font-black italic tracking-tighter text-white">Transactions</h1>
             <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.2em] text-worthiq-cyan">Last 90 days</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">

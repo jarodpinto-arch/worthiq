@@ -38,10 +38,14 @@ export class PlaidService {
 
   // Creates a Plaid Link token so the frontend can open the Link UI
   async createLinkToken(userId: string) {
+    // Transactions is required for checking/savings/credit (and most banks). Requiring
+    // Investments in `products` forces at least one investment account — users with only
+    // cash/credit hit "No investment accounts". Investments is optional when supported.
     const response = await this.plaidClient.linkTokenCreate({
       user: { client_user_id: userId },
       client_name: 'WorthIQ',
-      products: [Products.Transactions, Products.Investments],
+      products: [Products.Transactions],
+      optional_products: [Products.Investments],
       country_codes: [CountryCode.Us],
       language: 'en',
     });
