@@ -1,22 +1,31 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { backendProbeResponse } from '../../../lib/backend-probe';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Always served by Next (no Railway). Use this to confirm API routes deploy.
- * Backend liveness: GET /api/backend/health (needs BACKEND_URL on Vercel for the proxy route).
+ * GET /api/health — Next alive + whether BACKEND_URL is set.
+ * GET /api/health?deep=1 — also fetch Nest /health from Vercel (same check as /api/probe).
  */
-export async function GET() {
-  const base =
+export async function GET(request: NextRequest) {
+  if (request.nextUrl.searchParams.get('deep') === '1') {
+    const probe = await backendProbeResponse();
+    const data = await probe.json();
+    return NextResponse.json({ next: 'ok', deep: true, ...data });
+  }
+
+  const base = String(
     process.env.BACKEND_URL ||
-    process.env.RAILWAY_API_URL ||
-    process.env.NEST_API_URL ||
-    '';
+      process.env.RAILWAY_API_URL ||
+      process.env.NEST_API_URL ||
+      '',
+  ).trim();
 
   return NextResponse.json({
     next: 'ok',
-    backendUrlConfigured: Boolean(String(base).trim()),
+    backendUrlConfigured: Boolean(base),
     backendHealthUrl: '/api/backend/health',
+    deepCheckUrl: '/api/health?deep=1',
     timestamp: new Date().toISOString(),
   });
 }

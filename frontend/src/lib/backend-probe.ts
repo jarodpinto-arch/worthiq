@@ -1,26 +1,22 @@
 import { NextResponse } from 'next/server';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
-/**
- * One-shot check: can this Vercel deployment reach Railway?
- * Open: https://worthiq.io/api/diagnostic
- */
-export async function GET() {
+/** Server-side fetch to Nest /health (Vercel → Railway). */
+export async function backendProbeResponse(): Promise<NextResponse> {
   const base = String(
     process.env.BACKEND_URL ||
       process.env.RAILWAY_API_URL ||
       process.env.NEST_API_URL ||
       '',
-  ).trim().replace(/\/$/, '');
+  )
+    .trim()
+    .replace(/\/$/, '');
 
   if (!base) {
     return NextResponse.json(
       {
         ok: false,
         step: 'env',
-        detail: 'BACKEND_URL (or RAILWAY_API_URL / NEST_API_URL) is empty on Vercel Production',
+        detail: 'BACKEND_URL (or RAILWAY_API_URL / NEST_API_URL) is empty',
       },
       { status: 200 },
     );
