@@ -77,8 +77,9 @@ export class AuthService {
       data: { token: rawToken, userId: user.id, expiresAt },
     });
 
-    const frontendUrl =
+    const rawFrontend =
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const frontendUrl = rawFrontend.replace(/\/$/, '');
     const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
 
     await this.emailService.sendPasswordReset(email, resetUrl);

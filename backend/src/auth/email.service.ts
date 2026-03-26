@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
-export class EmailService {
+export class EmailService implements OnModuleInit {
   private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(EmailService.name);
 
@@ -17,6 +17,23 @@ export class EmailService {
     });
   }
 
+  onModuleInit() {
+    const user = this.configService.get<string>('GMAIL_USER');
+    const pass = this.configService.get<string>('GMAIL_APP_PASSWORD');
+    if (!user || !pass) {
+      this.logger.warn(
+        'GMAIL_USER or GMAIL_APP_PASSWORD is missing — password reset emails will fail until both are set (e.g. on Railway).',
+      );
+    }
+    const fe = this.configService.get<string>('FRONTEND_URL');
+    const prod = this.configService.get<string>('NODE_ENV') === 'production';
+    if (prod && (!fe || fe.includes('localhost'))) {
+      this.logger.warn(
+        `FRONTEND_URL is "${fe || 'unset'}" in production — reset emails must use your real domain (e.g. https://worthiq.io).`,
+      );
+    }
+  }
+
   async sendPasswordReset(toEmail: string, resetUrl: string) {
     const fromEmail = this.configService.get<string>('GMAIL_USER');
 
@@ -25,6 +42,7 @@ export class EmailService {
         from: `"WorthIQ" <${fromEmail}>`,
         to: toEmail,
         subject: 'Reset your WorthIQ password',
+        text: `Reset your WorthIQ password (link expires in 1 hour):\n\n${resetUrl}\n\nIf you didn't request this, ignore this email.`,
         html: `
           <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0C10; color: #cbd5e1; border-radius: 16px;">
             <h1 style="font-size: 28px; font-weight: 900; font-style: italic; color: #fff; margin-bottom: 4px;">WorthIQ</h1>
