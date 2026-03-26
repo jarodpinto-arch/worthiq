@@ -3,7 +3,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { useRouter } from 'next/navigation';
 import { Building2, Plus, Wallet, CreditCard, TrendingUp, ChevronLeft, Trash2 } from 'lucide-react';
-import { WorthIQLogo } from '../../components/WorthIQLogo';
+import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
 import { getApiBase } from '../../lib/api-base';
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
@@ -31,7 +31,7 @@ function PlaidButton({
     <button
       onClick={() => open()}
       disabled={!ready}
-      className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all disabled:opacity-40 text-sm shadow-xl"
+      className="btn-on-dark-primary btn-on-dark-primary--offset-surface flex items-center justify-center gap-2 text-sm font-bold shadow-xl disabled:opacity-40"
     >
       <Plus size={17} />
       {hasAccounts ? 'Add Another Bank or Brokerage' : 'Connect Bank via Plaid'}
@@ -165,7 +165,7 @@ export default function ConnectPage() {
         </button>
 
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <WorthIQLogo className="w-20 shrink-0 sm:w-24" />
+          <WorthIQLogoNav className="w-20 shrink-0 sm:w-24" />
           <div className="min-w-0">
             <h1 className="text-3xl font-bold tracking-tight text-white">
               {hasAccounts ? 'Manage Accounts' : 'Connect Bank'}
@@ -244,7 +244,7 @@ export default function ConnectPage() {
         {linkToken ? (
           <PlaidButton token={linkToken} hasAccounts={hasAccounts} onSuccess={onSuccess} />
         ) : !error && (
-          <div className="w-full flex items-center justify-center gap-2 bg-blue-600/30 text-blue-400 py-4 rounded-2xl font-bold text-sm">
+          <div className="w-full flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 py-4 text-sm font-bold text-slate-400">
             Initializing Plaid...
           </div>
         )}

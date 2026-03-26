@@ -1,97 +1,134 @@
 "use client";
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { WorthIQLogo } from '../../components/WorthIQLogo';
-import { getApiBase } from '../../lib/api-base';
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { AuthBrandScreen } from "../../components/Auth/AuthBrandScreen";
+import { getApiBase } from "../../lib/api-base";
 
 export default function Signup() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
-    setError('');
+    setError("");
     if (!email || !password) {
-      setError('Email and password are required.');
+      setError("Email and password are required.");
       return;
     }
     setLoading(true);
     try {
       const res = await fetch(`${getApiBase()}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, name }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || 'Registration failed.');
+        setError(data.message || "Registration failed.");
         return;
       }
 
-      localStorage.setItem('authToken', data.access_token);
-      router.push('/connect');
+      localStorage.setItem("authToken", data.access_token);
+      router.push("/connect");
     } catch {
-      setError('Could not connect to server. Is the backend running?');
+      setError("Could not connect to server. Is the backend running?");
     } finally {
       setLoading(false);
     }
   };
 
+  const inputClass = "input-auth w-full";
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-worthiq-surface p-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <WorthIQLogo className="w-44" priority />
-          <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-worthiq-cyan">
-            Create your account
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="w-full rounded-2xl border border-slate-800 bg-worthiq-panel p-4 text-white outline-none placeholder:text-slate-600 focus:ring-2 focus:ring-worthiq-cyan"
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full rounded-2xl border border-slate-800 bg-worthiq-panel p-4 text-white outline-none placeholder:text-slate-600 focus:ring-2 focus:ring-worthiq-cyan"
-          />
-          <input
-            type="password"
-            placeholder="Create Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSignup()}
-            className="w-full rounded-2xl border border-slate-800 bg-worthiq-panel p-4 text-white outline-none placeholder:text-slate-600 focus:ring-2 focus:ring-worthiq-cyan"
-          />
-
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-
-          <button
-            onClick={handleSignup}
-            disabled={loading}
-            className="w-full rounded-2xl bg-worthiq-cyan py-4 font-bold text-black transition hover:brightness-110 disabled:opacity-50"
+    <AuthBrandScreen
+      tagline="See the Risk. Own the Reward."
+      subtitle="Create your WorthIQ account"
+    >
+      <div className="relative z-[1] space-y-5">
+        <div className="space-y-1.5">
+          <label
+            htmlFor="signup-name"
+            className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
           >
-            {loading ? 'Creating account...' : 'Create Account'}
-          </button>
+            Name <span className="font-normal text-slate-500">(optional)</span>
+          </label>
+          <input
+            id="signup-name"
+            type="text"
+            autoComplete="name"
+            placeholder="Alex Morgan"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={inputClass}
+          />
         </div>
 
-        <p className="text-center text-slate-500 text-sm">
-          Already have an account?{' '}
-          <a href="/login" className="font-bold text-worthiq-cyan hover:text-white">Sign in</a>
+        <div className="space-y-1.5">
+          <label
+            htmlFor="signup-email"
+            className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+          >
+            Email
+          </label>
+          <input
+            id="signup-email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label
+            htmlFor="signup-password"
+            className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+          >
+            Password
+          </label>
+          <input
+            id="signup-password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSignup()}
+            className={inputClass}
+          />
+        </div>
+
+        {error ? (
+          <p className="text-center text-sm text-red-400">{error}</p>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={handleSignup}
+          disabled={loading}
+          className="btn-on-dark-primary btn-on-dark-primary--offset-panel"
+        >
+          {loading ? "Creating account…" : "Create account"}
+        </button>
+
+        <p className="border-t border-slate-600/40 pt-6 text-center text-sm text-slate-400">
+          Already have an account?{" "}
+          <a
+            href="/login"
+            className="font-semibold text-worthiq-cyan transition-colors hover:text-white"
+          >
+            Sign in
+          </a>
         </p>
       </div>
-    </div>
+    </AuthBrandScreen>
   );
 }

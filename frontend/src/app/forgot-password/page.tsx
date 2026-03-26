@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { WorthIQLogo } from '../../components/WorthIQLogo';
+import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
 import { getApiBase } from '../../lib/api-base';
 
 export default function ForgotPassword() {
@@ -39,7 +39,7 @@ export default function ForgotPassword() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-worthiq-surface p-6">
       <div className="w-full max-w-sm space-y-6">
         <div className="mb-8 flex flex-col items-center text-center">
-          <WorthIQLogo className="w-44" priority />
+          <WorthIQLogoNav className="w-48 sm:w-56" priority />
           <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-worthiq-cyan">Password reset</p>
         </div>
 
@@ -67,7 +67,7 @@ export default function ForgotPassword() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              className="w-full rounded-2xl border border-slate-800 bg-worthiq-panel p-4 text-white outline-none placeholder:text-slate-600 focus:ring-2 focus:ring-worthiq-cyan"
+              className="input-auth w-full rounded-2xl py-4"
             />
 
             {error && <p className="text-red-400 text-sm text-center">{error}</p>}
@@ -75,7 +75,7 @@ export default function ForgotPassword() {
             <button
               onClick={handleSubmit}
               disabled={loading || !email}
-              className="w-full rounded-2xl bg-worthiq-cyan py-4 font-bold text-black transition hover:brightness-110 disabled:opacity-50"
+              className="btn-on-dark-primary btn-on-dark-primary--offset-surface"
             >
               {loading ? 'Sending...' : 'Send Reset Link'}
             </button>

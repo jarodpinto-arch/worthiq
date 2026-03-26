@@ -9,7 +9,7 @@ import {
 import {
   LayoutDashboard, Link, Settings, BarChart2, TrendingUp, Building2, Plus, Receipt,
 } from 'lucide-react';
-import { WorthIQLogo } from '../../components/WorthIQLogo';
+import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
 import { getApiBase } from '../../lib/api-base';
 
 const RANGES = [
@@ -143,14 +143,10 @@ export default function ViewsPage() {
     <div className="min-h-screen bg-[#0A0C10] text-slate-300 flex">
       {/* ── SIDEBAR ── */}
       <aside className="w-20 lg:w-64 border-r border-slate-800 flex flex-col items-center lg:items-start p-6 gap-8 shrink-0">
-        <button
-          type="button"
-          onClick={() => router.push('/')}
-          className="cursor-pointer rounded-lg p-1 transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-worthiq-cyan"
-          aria-label="WorthIQ home"
-        >
-          <WorthIQLogo className="w-10 lg:w-32" />
-        </button>
+        <WorthIQLogoNav
+          className="w-10 lg:w-32"
+          wrapperClassName="rounded-lg p-1 focus-visible:ring-offset-[#0A0C10]"
+        />
 
         <nav className="flex-1 w-full space-y-1">
           <NavItem icon={<LayoutDashboard size={19} />} label="Dashboard"      onClick={() => router.push('/dashboard')} />
@@ -186,8 +182,8 @@ export default function ViewsPage() {
                 onClick={() => setRangeDays(r.days)}
                 className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
                   rangeDays === r.days
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-transparent border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'
+                    ? 'border-white bg-white text-black'
+                    : 'border-slate-700 bg-transparent text-slate-500 hover:border-slate-500 hover:text-slate-300'
                 }`}
               >
                 {r.label}
@@ -309,8 +305,8 @@ function NavItem({ icon, label, active, onClick }: {
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
-        active ? 'text-blue-400 bg-blue-500/10' : 'text-slate-500 hover:text-white'
+      className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
+        active ? 'bg-white text-black' : 'text-slate-500 hover:text-white'
       }`}
     >
       {icon}
@@ -357,10 +353,7 @@ function EmptyState({ onConnect }: { onConnect: () => void }) {
       <BarChart2 size={40} className="text-slate-700 mb-4" />
       <p className="text-slate-400 font-bold mb-1">No transaction data yet</p>
       <p className="text-slate-600 text-sm mb-6">Connect a bank account to unlock spending analytics.</p>
-      <button
-        onClick={onConnect}
-        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all text-sm"
-      >
+      <button type="button" onClick={onConnect} className="btn-on-dark-inline">
         <Plus size={16} />
         Connect Bank Account
       </button>

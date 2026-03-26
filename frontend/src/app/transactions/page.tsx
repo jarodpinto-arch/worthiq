@@ -6,7 +6,7 @@ import {
   LayoutDashboard, BarChart2, Link, Settings, Receipt,
   ChevronUp, ChevronDown, ChevronsUpDown, Sparkles, Search, SlidersHorizontal, X,
 } from 'lucide-react';
-import { WorthIQLogo } from '../../components/WorthIQLogo';
+import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
 import { getApiBase } from '../../lib/api-base';
 const COLS_KEY = 'worthiq_tx_columns';
 
@@ -222,14 +222,10 @@ export default function TransactionsPage() {
     <div className="min-h-screen bg-[#0A0C10] text-slate-300 flex">
       {/* ── SIDEBAR ── */}
       <aside className="w-20 lg:w-64 border-r border-slate-800 flex flex-col items-center lg:items-start p-6 gap-8 shrink-0">
-        <button
-          type="button"
-          onClick={() => router.push('/')}
-          className="cursor-pointer rounded-lg p-1 transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-worthiq-cyan"
-          aria-label="WorthIQ home"
-        >
-          <WorthIQLogo className="w-10 lg:w-32" />
-        </button>
+        <WorthIQLogoNav
+          className="w-10 lg:w-32"
+          wrapperClassName="rounded-lg p-1 focus-visible:ring-offset-[#0A0C10]"
+        />
         <nav className="flex-1 w-full space-y-1">
           <NavItem icon={<LayoutDashboard size={19} />} label="Dashboard"    onClick={() => router.push('/dashboard')} />
           <NavItem icon={<BarChart2 size={19} />}       label="Views"        onClick={() => router.push('/views')} />

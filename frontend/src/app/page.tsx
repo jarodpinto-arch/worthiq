@@ -1,48 +1,63 @@
 import Link from "next/link";
-import { WorthIQLogo } from "../components/WorthIQLogo";
+import { MarketingBackdrop } from "../components/MarketingBackdrop";
+import { WorthIQLogoNav } from "../components/WorthIQLogoNav";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-center">
-      <div className="mb-10 flex flex-col items-center gap-6">
-        <WorthIQLogo className="w-48 sm:w-56" priority />
-        <p className="max-w-md text-sm font-medium tracking-wide text-slate-400">
-          See the Risk. Own the Reward.
-        </p>
-      </div>
+    <div className="relative min-h-[100dvh] overflow-hidden bg-black text-slate-200">
+      <MarketingBackdrop />
 
-      <div className="flex w-full max-w-sm flex-col gap-3">
-        <Link
-          href="/login"
-          className="rounded-2xl bg-worthiq-cyan py-4 font-bold text-black shadow-lg shadow-worthiq-cyan/20 transition hover:brightness-110"
-        >
-          Log In
-        </Link>
-        <Link
-          href="/signup"
-          className="rounded-2xl border border-slate-800 py-4 font-bold text-white transition hover:border-slate-600 hover:bg-white/5"
-        >
-          Create Account
-        </Link>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-slate-800" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-black px-4 font-bold tracking-widest text-slate-600">
-              Experience the AI
-            </span>
-          </div>
+      <main className="relative z-10 mx-auto flex min-h-[100dvh] max-w-lg flex-col justify-center px-6 pb-16 pt-[max(2.5rem,env(safe-area-inset-top))] sm:px-8">
+        <div className="animate-logo-settle flex flex-col items-center">
+          <WorthIQLogoNav
+            className="w-full sm:w-[min(22rem,90vw)] md:w-[min(28rem,85vw)]"
+            variant="hero"
+            priority
+            wrapperClassName="max-w-full focus-visible:ring-offset-black"
+          />
+          <p className="animate-fade-up-delay-1 mt-8 max-w-sm text-center text-[11px] font-bold uppercase tracking-[0.28em] text-worthiq-cyan">
+            See the Risk. Own the Reward.
+          </p>
+          <p className="animate-fade-up-delay-1 mt-3 max-w-md text-center text-sm leading-relaxed text-slate-400">
+            Personal finance intelligence — bank-linked insights, Sage AI, and a
+            dashboard built for decisions.
+          </p>
         </div>
 
-        <Link
-          href="/guest"
-          className="text-base font-semibold text-worthiq-cyan transition hover:text-white"
-        >
-          Continue as Guest →
-        </Link>
-      </div>
+        <div className="animate-fade-up-delay-2 mt-12 flex w-full flex-col gap-3">
+          <Link
+            href="/login"
+            className="btn-on-dark-primary btn-on-dark-primary--offset-black"
+          >
+            Log In
+          </Link>
+
+          <Link
+            href="/signup"
+            className="btn-on-dark-secondary"
+          >
+            Create Account
+          </Link>
+
+          <div className="relative my-7">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-600/60" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-black/80 px-4 font-bold tracking-widest text-slate-400 backdrop-blur-sm">
+                Experience the AI
+              </span>
+            </div>
+          </div>
+
+          <Link
+            href="/guest"
+            className="animate-fade-up-delay-3 py-2 text-center text-[15px] font-semibold text-white underline decoration-white/35 underline-offset-4 transition hover:text-slate-200 hover:decoration-white/55"
+          >
+            Continue as Guest →
+          </Link>
+        </div>
+      </main>
     </div>
   );
 }

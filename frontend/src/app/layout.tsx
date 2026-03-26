@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="antialiased text-slate-200">
+      <body className="antialiased bg-worthiq-surface text-slate-200">
         {children}
         <SageChat />
         <Analytics />

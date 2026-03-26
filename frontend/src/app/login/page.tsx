@@ -37,8 +37,7 @@ export default function Login() {
     }
   };
 
-  const inputClass =
-    "w-full rounded-xl border border-slate-700/80 bg-black/40 px-4 py-3.5 text-[15px] text-white outline-none transition placeholder:text-slate-600 focus:border-worthiq-cyan/40 focus:ring-2 focus:ring-worthiq-cyan/30";
+  const inputClass = "input-auth w-full";
 
   return (
     <AuthBrandScreen
@@ -47,7 +46,7 @@ export default function Login() {
     >
       <div className="relative z-[1] space-y-5">
         <div className="space-y-1.5">
-          <label htmlFor="login-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <label htmlFor="login-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
             Email
           </label>
           <input
@@ -63,7 +62,7 @@ export default function Login() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="login-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <label htmlFor="login-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
             Password
           </label>
           <input
@@ -84,14 +83,14 @@ export default function Login() {
           type="button"
           onClick={handleLogin}
           disabled={loading}
-          className="w-full rounded-xl bg-worthiq-cyan py-3.5 text-[15px] font-bold text-black shadow-lg shadow-worthiq-cyan/20 transition hover:brightness-110 active:scale-[0.99] disabled:opacity-50"
+          className="btn-on-dark-primary btn-on-dark-primary--offset-panel"
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>
 
-        <div className="space-y-3 border-t border-slate-800/80 pt-6 text-center text-sm text-slate-500">
+        <div className="space-y-3 border-t border-slate-600/40 pt-6 text-center text-sm text-slate-400">
           <p>
-            <a href="/forgot-password" className="text-slate-400 transition-colors hover:text-worthiq-cyan">
+            <a href="/forgot-password" className="font-medium text-slate-300 transition-colors hover:text-worthiq-cyan">
               Forgot password?
             </a>
           </p>

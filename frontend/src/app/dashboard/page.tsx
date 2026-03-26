@@ -8,7 +8,7 @@ import {
   Sparkles, Loader2, X, ChevronDown,
 } from 'lucide-react';
 import WidgetCard from '../../components/WidgetCard';
-import { WorthIQLogo } from '../../components/WorthIQLogo';
+import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
 import { getApiBase } from '../../lib/api-base';
 const PINNED_KEY = 'worthiq_pinned_tabs';
 
@@ -253,14 +253,10 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#0A0C10] text-slate-300 flex">
       {/* ── SIDEBAR ── */}
       <aside className="w-20 lg:w-64 border-r border-slate-800 flex flex-col items-center lg:items-start p-6 gap-8 shrink-0">
-        <button
-          type="button"
-          onClick={() => router.push('/')}
-          className="cursor-pointer rounded-lg p-1 transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-worthiq-cyan"
-          aria-label="WorthIQ home"
-        >
-          <WorthIQLogo className="w-10 lg:w-32" />
-        </button>
+        <WorthIQLogoNav
+          className="w-10 lg:w-32"
+          wrapperClassName="rounded-lg p-1 focus-visible:ring-offset-[#0A0C10]"
+        />
 
         <nav className="flex-1 w-full space-y-1">
           <NavItem icon={<LayoutDashboard size={19} />} label="Dashboard" active />
@@ -292,7 +288,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-6 mb-8">
           <div>
-            <WorthIQLogo className="w-36 sm:w-44" />
+            <WorthIQLogoNav className="w-44 sm:w-56" wrapperClassName="focus-visible:ring-offset-[#0A0C10]" />
             <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.2em] text-worthiq-cyan">
               Financial Intelligence
             </p>
@@ -490,7 +486,7 @@ export default function Dashboard() {
                   onChange={e => setWidgetPrompt(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !widgetCreating && askSageWidget()}
                   placeholder='e.g. "bar chart of spending by category" or "options P&L by ticker"'
-                  className="flex-1 bg-[#11141B] border border-slate-700 text-white text-sm rounded-xl px-4 py-2.5 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors"
+                  className="input-auth flex-1 min-w-0 py-2.5 text-sm focus:border-purple-500 focus:ring-purple-500/35"
                 />
                 <button
                   onClick={askSageWidget}
@@ -778,10 +774,7 @@ function EmptyState({ onConnect }: { onConnect: () => void }) {
       <Building2 size={40} className="text-slate-700 mb-4" />
       <p className="text-slate-400 font-bold mb-1">No accounts connected</p>
       <p className="text-slate-600 text-sm mb-6">Link your bank, credit card, or brokerage to get started.</p>
-      <button
-        onClick={onConnect}
-        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all text-sm"
-      >
+      <button type="button" onClick={onConnect} className="btn-on-dark-inline">
         <Plus size={16} />
         Connect Bank Account
       </button>

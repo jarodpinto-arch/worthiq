@@ -384,9 +384,9 @@ export default function SageChat() {
               <button
                 onClick={sendMessage}
                 disabled={!input.trim() || loading}
-                className="shrink-0 w-7 h-7 flex items-center justify-center bg-blue-600 hover:bg-blue-500 disabled:opacity-30 rounded-lg transition-all"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-black transition-all hover:bg-slate-100 disabled:opacity-30"
               >
-                {loading ? <Loader2 size={12} className="animate-spin text-white" /> : <Send size={13} className="text-white" />}
+                {loading ? <Loader2 size={12} className="animate-spin text-black/60" /> : <Send size={13} className="text-black" />}
               </button>
             </div>
             <p className="text-[10px] text-slate-700 text-center mt-2">Sage · WorthIQ™ Financial AI</p>

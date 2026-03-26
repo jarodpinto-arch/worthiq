@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { WorthIQLogo } from "../WorthIQLogo";
+import { WorthIQLogoNav } from "../WorthIQLogoNav";
 
 type Phase = "burst" | "main";
 
@@ -96,15 +96,15 @@ export function AuthBrandScreen({ children, tagline, subtitle }: AuthBrandScreen
                       : "auth-logo-post-burst"
                 }`}
               >
-                <div
-                  className={`rounded-[2rem] transition-[box-shadow] duration-700 ${
+                <WorthIQLogoNav
+                  className="w-64 sm:w-80 md:w-[22rem]"
+                  priority
+                  wrapperClassName={`max-w-full focus-visible:ring-offset-black transition-[filter] duration-700 ${
                     phase === "main"
-                      ? "shadow-[0_0_48px_-14px_rgba(70,194,233,0.32)]"
-                      : "shadow-[0_0_100px_-6px_rgba(70,194,233,0.5)]"
+                      ? "drop-shadow-[0_0_42px_rgba(70,194,233,0.42)]"
+                      : "drop-shadow-[0_0_88px_rgba(70,194,233,0.58)]"
                   }`}
-                >
-                  <WorthIQLogo className="w-56 sm:w-64" priority />
-                </div>
+                />
               </div>
             </div>
 
@@ -119,7 +119,7 @@ export function AuthBrandScreen({ children, tagline, subtitle }: AuthBrandScreen
                 {tagline}
               </p>
               {subtitle ? (
-                <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
+                <p className="mt-2 text-sm text-slate-400">{subtitle}</p>
               ) : null}
             </div>
           </div>

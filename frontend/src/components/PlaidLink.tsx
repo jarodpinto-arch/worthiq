@@ -53,7 +53,7 @@ export const PlaidLink: React.FC<PlaidLinkProps> = ({ onSuccess, userId }) => {
     <button
       onClick={() => open()}
       disabled={!ready}
-      className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+      className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 font-medium text-black shadow-md shadow-black/20 ring-1 ring-white/80 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:text-white disabled:ring-0"
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
