@@ -6,8 +6,6 @@ import { Building2, Plus, Wallet, CreditCard, TrendingUp, ChevronLeft, Trash2 } 
 import { WorthIQLogo } from '../../components/WorthIQLogo';
 import { getApiBase } from '../../lib/api-base';
 
-const API_URL = getApiBase();
-
 const TYPE_ICON: Record<string, React.ReactNode> = {
   depository: <Wallet    size={15} className="text-green-400" />,
   credit:     <CreditCard size={15} className="text-red-400" />,
@@ -56,10 +54,10 @@ export default function ConnectPage() {
 
     try {
       const [accountsRes, tokenRes] = await Promise.all([
-        fetch(`${API_URL}/plaid/accounts`, {
+        fetch(`${getApiBase()}/plaid/accounts`, {
           headers: { Authorization: `Bearer ${authToken}` },
         }),
-        fetch(`${API_URL}/plaid/create-link-token`, {
+        fetch(`${getApiBase()}/plaid/create-link-token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         }),
@@ -98,7 +96,7 @@ export default function ConnectPage() {
   const onSuccess = useCallback(async (public_token: string) => {
     const authToken = localStorage.getItem('authToken');
     try {
-      await fetch(`${API_URL}/plaid/exchange-public-token`, {
+      await fetch(`${getApiBase()}/plaid/exchange-public-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ public_token }),
@@ -117,7 +115,7 @@ export default function ConnectPage() {
       // Find account_id for this institution to get plaid item id
       // We need to hit the backend to get the item id — for now remove via institution name match
       // Re-fetch accounts after to refresh state
-      const res = await fetch(`${API_URL}/plaid/accounts`, {
+      const res = await fetch(`${getApiBase()}/plaid/accounts`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const data = await res.json();
@@ -127,7 +125,7 @@ export default function ConnectPage() {
 
       if (institutionAccounts.length > 0) {
         // Get the plaid item id from the first account's item_id
-        const itemRes = await fetch(`${API_URL}/plaid/items`, {
+        const itemRes = await fetch(`${getApiBase()}/plaid/items`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
         if (itemRes.ok) {
@@ -136,7 +134,7 @@ export default function ConnectPage() {
             (item: any) => item.institution === institution
           );
           if (matchingItem) {
-            await fetch(`${API_URL}/plaid/items/${matchingItem.id}`, {
+            await fetch(`${getApiBase()}/plaid/items/${matchingItem.id}`, {
               method: 'DELETE',
               headers: { Authorization: `Bearer ${authToken}` },
             });

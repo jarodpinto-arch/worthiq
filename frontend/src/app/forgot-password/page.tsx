@@ -4,8 +4,6 @@ import { useRouter } from 'next/navigation';
 import { WorthIQLogo } from '../../components/WorthIQLogo';
 import { getApiBase } from '../../lib/api-base';
 
-const API_URL = getApiBase();
-
 export default function ForgotPassword() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -17,7 +15,7 @@ export default function ForgotPassword() {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/auth/forgot-password`, {
+      const res = await fetch(`${getApiBase()}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

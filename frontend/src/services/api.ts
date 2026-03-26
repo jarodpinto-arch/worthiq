@@ -1,7 +1,5 @@
 import { getApiBase } from '../lib/api-base';
 
-const API_BASE_URL = getApiBase();
-
 class ApiService {
   private token: string | null = null;
 
@@ -36,7 +34,7 @@ class ApiService {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${getApiBase()}${endpoint}`, {
       ...options,
       headers,
     });

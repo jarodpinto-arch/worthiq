@@ -4,8 +4,6 @@ import { useRouter } from 'next/navigation';
 import { WorthIQLogo } from '../../components/WorthIQLogo';
 import { getApiBase } from '../../lib/api-base';
 
-const API_URL = getApiBase();
-
 export default function Signup() {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -22,7 +20,7 @@ export default function Signup() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
+      const res = await fetch(`${getApiBase()}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name }),

@@ -8,8 +8,6 @@ import {
 } from 'lucide-react';
 import { WorthIQLogo } from '../../components/WorthIQLogo';
 import { getApiBase } from '../../lib/api-base';
-
-const API_URL = getApiBase();
 const COLS_KEY = 'worthiq_tx_columns';
 
 type SortDir = 'asc' | 'desc' | null;
@@ -69,13 +67,13 @@ export default function TransactionsPage() {
     const start = toDateStr(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
 
     Promise.all([
-      fetch(`${API_URL}/plaid/transactions?startDate=${start}&endDate=${end}`, {
+      fetch(`${getApiBase()}/plaid/transactions?startDate=${start}&endDate=${end}`, {
         headers: { Authorization: `Bearer ${token}` },
       }).then(r => r.json()),
-      fetch(`${API_URL}/plaid/accounts`, {
+      fetch(`${getApiBase()}/plaid/accounts`, {
         headers: { Authorization: `Bearer ${token}` },
       }).then(r => r.json()),
-      fetch(`${API_URL}/sage/classifications`, {
+      fetch(`${getApiBase()}/sage/classifications`, {
         headers: { Authorization: `Bearer ${token}` },
       }).then(r => r.json()),
     ])
@@ -168,7 +166,7 @@ export default function TransactionsPage() {
         amount:         t.amount,
         category:       t.category ?? null,
       }));
-      const res = await fetch(`${API_URL}/sage/classify`, {
+      const res = await fetch(`${getApiBase()}/sage/classify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ transactions: slim }),
@@ -195,7 +193,7 @@ export default function TransactionsPage() {
     if (!editValue.trim()) { setEditingId(null); return; }
     const token = localStorage.getItem('authToken');
     try {
-      await fetch(`${API_URL}/sage/classifications/${txId}`, {
+      await fetch(`${getApiBase()}/sage/classifications/${txId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ category: editValue.trim() }),

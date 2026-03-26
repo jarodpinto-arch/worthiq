@@ -12,8 +12,6 @@ import {
 import { WorthIQLogo } from '../../components/WorthIQLogo';
 import { getApiBase } from '../../lib/api-base';
 
-const API_URL = getApiBase();
-
 const RANGES = [
   { label: '30d',    days: 30 },
   { label: '90d',    days: 90 },
@@ -48,7 +46,7 @@ export default function ViewsPage() {
     const authToken = localStorage.getItem('authToken');
     if (!authToken) { router.push('/login'); return; }
 
-    fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${authToken}` } })
+    fetch(`${getApiBase()}/auth/me`, { headers: { Authorization: `Bearer ${authToken}` } })
       .then(r => { if (!r.ok) { localStorage.removeItem('authToken'); router.push('/login'); } })
       .catch(() => {});
   }, [router]);
@@ -62,7 +60,7 @@ export default function ViewsPage() {
     const end   = toDateStr(new Date());
     const start = toDateStr(new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000));
 
-    fetch(`${API_URL}/plaid/transactions?startDate=${start}&endDate=${end}`, {
+    fetch(`${getApiBase()}/plaid/transactions?startDate=${start}&endDate=${end}`, {
       headers: { Authorization: `Bearer ${authToken}` },
     })
       .then(r => r.json())

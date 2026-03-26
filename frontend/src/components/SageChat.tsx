@@ -4,8 +4,6 @@ import { X, Send, Trash2, Sparkles, ChevronDown, Plus, Loader2 } from 'lucide-re
 import WidgetCard from './WidgetCard';
 import { getApiBase } from '../lib/api-base';
 
-const API_URL = getApiBase();
-
 interface TextMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -62,8 +60,8 @@ export default function SageChat() {
       const start = toDateStr(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
 
       const [accRes, txRes] = await Promise.all([
-        fetch(`${API_URL}/plaid/accounts`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/plaid/transactions?startDate=${start}&endDate=${end}`, {
+        fetch(`${getApiBase()}/plaid/accounts`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${getApiBase()}/plaid/transactions?startDate=${start}&endDate=${end}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -138,7 +136,7 @@ export default function SageChat() {
 
     try {
       const [histRes, ctx] = await Promise.all([
-        fetch(`${API_URL}/sage/chat`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${getApiBase()}/sage/chat`, { headers: { Authorization: `Bearer ${token}` } }),
         buildContext(token),
       ]);
       const hist = await histRes.json();
@@ -167,7 +165,7 @@ export default function SageChat() {
     try {
       if (isWidgetRequest(text)) {
         // Route to widget creation
-        const res = await fetch(`${API_URL}/sage/create-widget`, {
+        const res = await fetch(`${getApiBase()}/sage/create-widget`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ prompt: text, context }),
@@ -187,7 +185,7 @@ export default function SageChat() {
         }
       } else {
         // Regular chat
-        const res = await fetch(`${API_URL}/sage/chat`, {
+        const res = await fetch(`${getApiBase()}/sage/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ message: text, context }),
@@ -206,7 +204,7 @@ export default function SageChat() {
     const token = localStorage.getItem('authToken');
     if (!token) return;
     try {
-      const res = await fetch(`${API_URL}/widgets`, {
+      const res = await fetch(`${getApiBase()}/widgets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ type: widget.type, title: widget.title, config: widget.config }),
@@ -220,7 +218,7 @@ export default function SageChat() {
   const clearChat = async () => {
     const token = localStorage.getItem('authToken');
     if (!token) return;
-    await fetch(`${API_URL}/sage/chat`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await fetch(`${getApiBase()}/sage/chat`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     setMessages([]);
     setSavedWidgetIds(new Set());
   };

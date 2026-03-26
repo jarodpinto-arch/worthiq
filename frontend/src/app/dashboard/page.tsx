@@ -10,8 +10,6 @@ import {
 import WidgetCard from '../../components/WidgetCard';
 import { WorthIQLogo } from '../../components/WorthIQLogo';
 import { getApiBase } from '../../lib/api-base';
-
-const API_URL = getApiBase();
 const PINNED_KEY = 'worthiq_pinned_tabs';
 
 function fmt(n: number) {
@@ -66,7 +64,7 @@ export default function Dashboard() {
 
     const init = async () => {
       try {
-        const profileRes = await fetch(`${API_URL}/auth/me`, {
+        const profileRes = await fetch(`${getApiBase()}/auth/me`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
         if (!profileRes.ok) {
@@ -78,11 +76,11 @@ export default function Dashboard() {
         setUserEmail(profile.email);
 
         const [accountsRes, invRes, txRes, classRes, widgetsRes] = await Promise.all([
-          fetch(`${API_URL}/plaid/accounts`, { headers: { Authorization: `Bearer ${authToken}` } }),
-          fetch(`${API_URL}/plaid/investment-transactions`, { headers: { Authorization: `Bearer ${authToken}` } }),
-          fetch(`${API_URL}/plaid/transactions`, { headers: { Authorization: `Bearer ${authToken}` } }),
-          fetch(`${API_URL}/sage/classifications`, { headers: { Authorization: `Bearer ${authToken}` } }),
-          fetch(`${API_URL}/widgets`, { headers: { Authorization: `Bearer ${authToken}` } }),
+          fetch(`${getApiBase()}/plaid/accounts`, { headers: { Authorization: `Bearer ${authToken}` } }),
+          fetch(`${getApiBase()}/plaid/investment-transactions`, { headers: { Authorization: `Bearer ${authToken}` } }),
+          fetch(`${getApiBase()}/plaid/transactions`, { headers: { Authorization: `Bearer ${authToken}` } }),
+          fetch(`${getApiBase()}/sage/classifications`, { headers: { Authorization: `Bearer ${authToken}` } }),
+          fetch(`${getApiBase()}/widgets`, { headers: { Authorization: `Bearer ${authToken}` } }),
         ]);
 
         const accData = await accountsRes.json();
@@ -149,7 +147,7 @@ export default function Dashboard() {
         recentTxSample: transactions.slice(0, 10).map(t => ({ name: t.merchant_name || t.name, amount: t.amount, date: t.date })),
         investmentTxCount: investmentTx.length,
       };
-      const res = await fetch(`${API_URL}/sage/create-widget`, {
+      const res = await fetch(`${getApiBase()}/sage/create-widget`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ prompt: widgetPrompt, context }),
@@ -169,7 +167,7 @@ export default function Dashboard() {
   const saveWidget = async (preview: any) => {
     const authToken = localStorage.getItem('authToken');
     try {
-      const res = await fetch(`${API_URL}/widgets`, {
+      const res = await fetch(`${getApiBase()}/widgets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ type: preview.type, title: preview.title, config: preview.config }),
@@ -185,7 +183,7 @@ export default function Dashboard() {
   const deleteWidget = async (id: string) => {
     const authToken = localStorage.getItem('authToken');
     try {
-      await fetch(`${API_URL}/widgets/${id}`, {
+      await fetch(`${getApiBase()}/widgets/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${authToken}` },
       });
@@ -220,7 +218,7 @@ export default function Dashboard() {
     widgetDragTarget.current = null;
     const authToken = localStorage.getItem('authToken');
     try {
-      await fetch(`${API_URL}/widgets/reorder`, {
+      await fetch(`${getApiBase()}/widgets/reorder`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ order: withPositions.map(w => ({ id: w.id, position: w.position })) }),

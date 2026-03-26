@@ -14,3 +14,54 @@ body {
   color: #e2e8f0;
   background: var(--worthiq-surface);
 }
+
+/* Login / auth intro: logo expands in, then layout settles */
+@keyframes auth-logo-burst {
+  0% {
+    transform: scale(0.28);
+    opacity: 0;
+    filter: blur(14px);
+  }
+  65% {
+    transform: scale(1.08);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.auth-logo-burst {
+  animation: auth-logo-burst 0.88s cubic-bezier(0.33, 1.15, 0.52, 1) forwards;
+}
+
+/* Holds end state after burst class is removed (avoids flash when switching to main layout) */
+.auth-logo-post-burst {
+  transform: scale(1);
+  opacity: 1;
+  filter: blur(0);
+}
+
+@keyframes auth-ring-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.06);
+    opacity: 0.7;
+  }
+}
+
+.auth-ring-pulse {
+  animation: auth-ring-pulse 2.8s ease-in-out infinite;
+}
+
+.auth-ring-pulse-delayed {
+  animation: auth-ring-pulse 2.8s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
