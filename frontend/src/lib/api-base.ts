@@ -12,7 +12,7 @@
 export function getApiBase(): string {
   const raw = process.env.NEXT_PUBLIC_API_URL;
   if (raw != null && String(raw).trim() !== '') {
-    return String(raw).replace(/\/$/, '');
+    return String(raw).trim().replace(/\/$/, '');
   }
   if (typeof window !== 'undefined') {
     const h = window.location.hostname;

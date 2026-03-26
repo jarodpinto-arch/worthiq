@@ -10,7 +10,7 @@ function backendBase(): string {
     process.env.RAILWAY_API_URL ||
     process.env.NEST_API_URL ||
     '';
-  return raw.replace(/\/$/, '');
+  return String(raw).trim().replace(/\/$/, '');
 }
 
 type Ctx = { params: Promise<{ path: string[] }> };
@@ -35,7 +35,13 @@ async function proxy(request: NextRequest, ctx: Ctx): Promise<Response> {
   const outHeaders = new Headers();
   request.headers.forEach((value, key) => {
     const kl = key.toLowerCase();
-    if (['host', 'connection', 'content-length'].includes(kl)) return;
+    // Hop-by-hop and proxy pitfalls; omit accept-encoding so origin returns plain bodies.
+    if (
+      ['host', 'connection', 'content-length', 'accept-encoding', 'te', 'trailer'].includes(
+        kl,
+      )
+    )
+      return;
     outHeaders.set(key, value);
   });
 

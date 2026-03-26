@@ -10,7 +10,7 @@ function backendBase(): string {
     process.env.RAILWAY_API_URL ||
     process.env.NEST_API_URL ||
     '';
-  return raw.replace(/\/$/, '');
+  return String(raw).trim().replace(/\/$/, '');
 }
 
 export async function GET() {
