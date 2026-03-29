@@ -1,59 +1,86 @@
 /**
- * Logo mark. Uses a native <img> so transparency isn’t flattened by the image optimizer
- * and edges stay clean on dark UI.
- *
- * For a true “no square” look on colored pages, use a source file with a transparent
- * background (PNG/SVG). The current `/public/brand/worthiq-logo.png` includes an opaque
- * black matte; a designer export without that matte is ideal.
+ * WorthIQ SVG wordmark — transparent background, no image dependency, crisp at any size.
+ * Replaces the old PNG which had an opaque black matte.
  */
-const LOGO_SRC = "/brand/worthiq-logo.png";
 
 export type WorthIQLogoProps = {
-  /** Tailwind width/height classes, e.g. `w-10 lg:w-32` or `h-12 w-auto` */
+  /** Tailwind sizing classes, e.g. "h-12 w-auto" */
   className?: string;
   priority?: boolean;
-  /**
-   * `hero` — large soft glow + drop shadow; no UI frame/box.
-   * `default` — image only (headers, sidebars).
-   */
   variant?: "default" | "hero";
 };
 
-export function WorthIQLogo({
-  className = "w-36",
-  priority,
-  variant = "default",
-}: WorthIQLogoProps) {
-  const img = (
-    // Native img: preserves alpha, avoids Next/Image layout box quirks on transparent PNGs.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={LOGO_SRC}
-      alt="WorthIQ"
-      width={1024}
-      height={1024}
-      className={`block h-auto max-w-full bg-transparent object-contain object-center select-none ${className}`.trim()}
-      draggable={false}
-      decoding="async"
-      fetchPriority={priority ? "high" : "auto"}
-    />
+export function WorthIQLogo({ className = "h-12 w-auto", variant = "default" }: WorthIQLogoProps) {
+  const mark = (
+    <svg
+      viewBox="0 0 248 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`block ${className}`.trim()}
+      aria-label="WorthIQ"
+      role="img"
+    >
+      <defs>
+        <filter id="bolt-glow" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
+        </filter>
+      </defs>
+
+      {/* Glow layer behind bolt */}
+      <path
+        d="M25 4 L13 32 L20 32 L10 60 L30 34 L23 34 L33 4 Z"
+        fill="#46C2E9"
+        opacity="0.35"
+        filter="url(#bolt-glow)"
+      />
+      {/* Bolt fill */}
+      <path
+        d="M25 4 L13 32 L20 32 L10 60 L30 34 L23 34 L33 4 Z"
+        fill="#46C2E9"
+      />
+
+      {/* "Worth" — white, bold */}
+      <text
+        x="43"
+        y="47"
+        fontFamily="-apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
+        fontSize="42"
+        fontWeight="700"
+        fill="white"
+        letterSpacing="-1.5"
+      >
+        Worth
+      </text>
+
+      {/* "IQ" — cyan, extra bold */}
+      <text
+        x="168"
+        y="47"
+        fontFamily="-apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
+        fontSize="42"
+        fontWeight="800"
+        fill="#46C2E9"
+        letterSpacing="-1"
+      >
+        IQ
+      </text>
+    </svg>
   );
 
   if (variant === "hero") {
     return (
       <div className="relative mx-auto flex max-w-[min(92vw,30rem)] justify-center sm:max-w-[min(90vw,38rem)] md:max-w-[min(88vw,42rem)]">
+        {/* Ambient glow */}
         <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[min(120%,520px)] w-[min(120%,520px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-worthiq-cyan/20 blur-3xl"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[200%] w-[120%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#46C2E9]/12 blur-3xl"
           aria-hidden
         />
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[min(90%,380px)] w-[min(90%,380px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-worthiq-cyan/10 blur-2xl"
-          aria-hidden
-        />
-        <div className="relative drop-shadow-[0_0_50px_rgba(70,194,233,0.45)]">{img}</div>
+        <div className="relative drop-shadow-[0_0_40px_rgba(70,194,233,0.4)]">
+          {mark}
+        </div>
       </div>
     );
   }
 
-  return img;
+  return mark;
 }
