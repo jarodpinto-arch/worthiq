@@ -305,12 +305,15 @@ Data sources:
 - investment_transactions: trades, options, buys/sells
 - accounts: balances by account type
 
-groupBy options (for charts/tables): category, merchant, ticker, month, week, account, institution, type, subtype
+groupBy options (for charts/tables): category, sage_category (Sage label only; spending tx), merchant, ticker, month, week, account, institution, type, subtype, instrument_kind (investment only: Options vs Stocks & other)
 
 Filters:
-- txFilter: { category, merchant, type (debit/credit), dateRange (30d/90d/6mo/1yr) }
-- invFilter: { subtype (buy/sell/option/dividend), ticker }
+- txFilter: { category (substring: Sage or Plaid category), sageCategory (substring: user/ai Sage category only), merchant, type (debit=positive amount / credit=negative), flow (income=negative Plaid amount / expense=positive / omit=all), dateRange (30d/90d/6mo/1yr) }
+- invFilter: { subtype (buy/sell/option/dividend), ticker, sageCategory (substring on Sage classification for that investment_transaction_id), instrumentKind (options_only | non_options | all), dateRange }
 - accountFilter: { type (depository/credit/investment) }
+- Top-level dateRange applies when source-specific dateRange is omitted.
+
+Use dataSource "transactions" for income/expense and spending charts; "investment_transactions" for trades, options vs stock breakdown, P&L style metrics. When the user asks for options only, set invFilter.instrumentKind to "options_only"; for stocks/ETFs/funds excluding options, use "non_options".
 
 LIVE FINANCIAL CONTEXT:
 ${JSON.stringify(context, null, 2)}

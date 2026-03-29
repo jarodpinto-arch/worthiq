@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { X, GripVertical } from 'lucide-react';
+import { isOptionsLeg, type InstrumentKindFilter } from '../lib/investment-instrument';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
 
@@ -19,8 +20,21 @@ interface WidgetConfig {
   dataSource: 'transactions' | 'investment_transactions' | 'accounts';
   metric?: string;
   groupBy?: string;
-  txFilter?: { category?: string; merchant?: string; type?: string; dateRange?: string };
-  invFilter?: { subtype?: string; ticker?: string };
+  txFilter?: {
+    category?: string;
+    sageCategory?: string;
+    merchant?: string;
+    type?: string;
+    flow?: 'income' | 'expense' | 'all';
+    dateRange?: string;
+  };
+  invFilter?: {
+    subtype?: string;
+    ticker?: string;
+    sageCategory?: string;
+    instrumentKind?: InstrumentKindFilter;
+    dateRange?: string;
+  };
   accountFilter?: { type?: string };
   dateRange?: string;
   limit?: number;
@@ -52,6 +66,22 @@ interface WidgetCardProps {
 }
 
 // ── Data computation ──────────────────────────────────────────────────────────
+
+function daysForRange(dr?: string): number | null {
+  if (!dr) return null;
+  const m: Record<string, number> = { '30d': 30, '90d': 90, '6mo': 180, '1yr': 365 };
+  return m[dr] ?? null;
+}
+
+function filterByDateRange<T extends { date?: string }>(rows: T[], dateRange?: string): T[] {
+  const days = daysForRange(dateRange);
+  if (days == null) return rows;
+  const cutoff = new Date();
+  cutoff.setUTCHours(0, 0, 0, 0);
+  cutoff.setUTCDate(cutoff.getUTCDate() - days);
+  const cs = cutoff.toISOString().slice(0, 10);
+  return rows.filter((r) => (r.date || '') >= cs);
+}
 
 function computeWidgetData(widget: Widget, data: FinancialData) {
   const { config } = widget;
@@ -95,10 +125,27 @@ function computeWidgetData(widget: Widget, data: FinancialData) {
   }
 
   if (config.dataSource === 'investment_transactions') {
+    const secMap = new Map(data.securities.map(s => [s.security_id, s]));
     let txs = data.investmentTx;
+    const invDr = config.dateRange || config.invFilter?.dateRange;
+    txs = filterByDateRange(txs, invDr);
+    const ik = config.invFilter?.instrumentKind;
+    if (ik && ik !== 'all') {
+      txs = txs.filter((t) => {
+        const opt = isOptionsLeg(t, secMap.get(t.security_id));
+        return ik === 'options_only' ? opt : !opt;
+      });
+    }
+    if (config.invFilter?.sageCategory) {
+      const q = config.invFilter.sageCategory.toLowerCase();
+      txs = txs.filter((t) => {
+        const cl = data.classifications[t.investment_transaction_id];
+        const sage = (cl?.userCategory || cl?.aiCategory || '').toLowerCase();
+        return sage.includes(q);
+      });
+    }
     if (config.invFilter?.subtype) txs = txs.filter(t => t.subtype?.toLowerCase() === config.invFilter!.subtype!.toLowerCase());
     if (config.invFilter?.ticker) {
-      const secMap = new Map(data.securities.map(s => [s.security_id, s]));
       txs = txs.filter(t => {
         const sec = secMap.get(t.security_id);
         return sec?.ticker_symbol?.toUpperCase() === config.invFilter!.ticker!.toUpperCase();
@@ -146,8 +193,32 @@ function computeWidgetData(widget: Widget, data: FinancialData) {
       return { type: 'grouped', rows: Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([name, value]) => ({ name, value })) };
     }
 
+    if (config.groupBy === 'sage_category') {
+      const grouped: Record<string, number> = {};
+      txs.forEach((t) => {
+        const cl = data.classifications[t.investment_transaction_id];
+        const cat = cl?.userCategory || cl?.aiCategory || t.subtype || 'Uncategorized';
+        grouped[cat] = (grouped[cat] ?? 0) + Math.abs(t.amount);
+      });
+      return {
+        type: 'grouped',
+        rows: Object.entries(grouped)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, config.limit ?? 10)
+          .map(([name, value]) => ({ name, value })),
+      };
+    }
+
+    if (config.groupBy === 'instrument_kind') {
+      const grouped: Record<string, number> = { Options: 0, 'Stocks & other': 0 };
+      txs.forEach((t) => {
+        const key = isOptionsLeg(t, secMap.get(t.security_id)) ? 'Options' : 'Stocks & other';
+        grouped[key] += Math.abs(Number(t.amount) || 0);
+      });
+      return { type: 'grouped', rows: Object.entries(grouped).map(([name, value]) => ({ name, value })) };
+    }
+
     // table fallback
-    const secMap = new Map(data.securities.map(s => [s.security_id, s]));
     return {
       type: 'table',
       columns: ['Date', 'Ticker', 'Type', 'Qty', 'Price', 'Amount'],
@@ -160,13 +231,27 @@ function computeWidgetData(widget: Widget, data: FinancialData) {
 
   // transactions (default)
   let txs = data.transactions;
+  const txDr = config.dateRange || config.txFilter?.dateRange;
+  txs = filterByDateRange(txs, txDr);
+  const flow = config.txFilter?.flow;
+  if (flow === 'income') txs = txs.filter((t) => t.amount < 0);
+  else if (flow === 'expense') txs = txs.filter((t) => t.amount > 0);
   if (config.txFilter?.type === 'debit') txs = txs.filter(t => t.amount > 0);
   if (config.txFilter?.type === 'credit') txs = txs.filter(t => t.amount < 0);
   if (config.txFilter?.category) {
+    const q = config.txFilter.category.toLowerCase();
     txs = txs.filter(t => {
       const cl = data.classifications[t.transaction_id];
       const cat = cl?.userCategory || cl?.aiCategory || t.category?.[0] || '';
-      return cat.toLowerCase().includes(config.txFilter!.category!.toLowerCase());
+      return cat.toLowerCase().includes(q);
+    });
+  }
+  if (config.txFilter?.sageCategory) {
+    const q = config.txFilter.sageCategory.toLowerCase();
+    txs = txs.filter((t) => {
+      const cl = data.classifications[t.transaction_id];
+      const sage = (cl?.userCategory || cl?.aiCategory || '').toLowerCase();
+      return sage.includes(q);
     });
   }
   if (config.txFilter?.merchant) {
@@ -187,12 +272,34 @@ function computeWidgetData(widget: Widget, data: FinancialData) {
 
   if (config.groupBy === 'category') {
     const grouped: Record<string, number> = {};
-    txs.filter(t => t.amount > 0).forEach(t => {
+    txs.filter((t) => t.amount > 0).forEach((t) => {
       const cl = data.classifications[t.transaction_id];
       const cat = cl?.userCategory || cl?.aiCategory || t.category?.[0] || 'Uncategorized';
       grouped[cat] = (grouped[cat] ?? 0) + t.amount;
     });
-    return { type: 'grouped', rows: Object.entries(grouped).sort(([, a], [, b]) => b - a).slice(0, config.limit ?? 10).map(([name, value]) => ({ name, value })) };
+    return {
+      type: 'grouped',
+      rows: Object.entries(grouped)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, config.limit ?? 10)
+        .map(([name, value]) => ({ name, value })),
+    };
+  }
+
+  if (config.groupBy === 'sage_category') {
+    const grouped: Record<string, number> = {};
+    txs.filter((t) => t.amount > 0).forEach((t) => {
+      const cl = data.classifications[t.transaction_id];
+      const cat = cl?.userCategory || cl?.aiCategory || 'Uncategorized';
+      grouped[cat] = (grouped[cat] ?? 0) + t.amount;
+    });
+    return {
+      type: 'grouped',
+      rows: Object.entries(grouped)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, config.limit ?? 10)
+        .map(([name, value]) => ({ name, value })),
+    };
   }
 
   if (config.groupBy === 'merchant') {

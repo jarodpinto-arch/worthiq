@@ -24,12 +24,29 @@ type AccountDetail = 'cash' | 'credit' | 'investments' | 'options' | null;
 
 type DashboardTabVariant = 'example' | 'sage_widget' | 'manual';
 
+type PivotZone = 'filters' | 'rows' | 'columns' | 'values';
+
+interface ManualPivotLayout {
+  filters: string[];
+  rows: string[];
+  columns: string[];
+  values: string[];
+}
+
+const EMPTY_MANUAL_LAYOUT: ManualPivotLayout = {
+  filters: [],
+  rows: [],
+  columns: [],
+  values: [],
+};
+
 interface DashboardTab {
   id: string;
   title: string;
   variant: DashboardTabVariant;
   exampleKey?: 'spending' | 'investments';
   widgetId?: string;
+  manualLayout?: ManualPivotLayout;
 }
 
 const DEFAULT_DASHBOARD_TABS: DashboardTab[] = [
@@ -76,8 +93,13 @@ export default function Dashboard() {
       if (raw) {
         const parsed = JSON.parse(raw) as unknown;
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setDashboardTabs(parsed as DashboardTab[]);
-          setActiveTab((parsed as DashboardTab[])[0].id);
+          const tabs = (parsed as DashboardTab[]).map((t) =>
+            t.variant === 'manual'
+              ? { ...t, manualLayout: t.manualLayout ?? { ...EMPTY_MANUAL_LAYOUT } }
+              : t,
+          );
+          setDashboardTabs(tabs);
+          setActiveTab(tabs[0].id);
         }
       }
     } catch {}
@@ -276,10 +298,19 @@ export default function Dashboard() {
   const addManualTab = () => {
     const title = manualTabTitle.trim() || 'Custom view';
     const id = `tab-manual-${Date.now()}`;
-    setDashboardTabs((prev) => [...prev, { id, title, variant: 'manual' }]);
+    setDashboardTabs((prev) => [
+      ...prev,
+      { id, title, variant: 'manual', manualLayout: { ...EMPTY_MANUAL_LAYOUT } },
+    ]);
     setActiveTab(id);
     setManualTabTitle('');
     setNewTabModal('closed');
+  };
+
+  const updateManualLayout = (tabId: string, layout: ManualPivotLayout) => {
+    setDashboardTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, manualLayout: layout } : t)),
+    );
   };
 
   const toggleExpanded = (key: Exclude<AccountDetail, null>) => {
@@ -605,7 +636,11 @@ export default function Dashboard() {
               )}
 
               {activeDashboardTab?.variant === 'manual' && (
-                <ManualTabBuilder tabTitle={activeDashboardTab.title} />
+                <ManualTabBuilder
+                  tabTitle={activeDashboardTab.title}
+                  layout={activeDashboardTab.manualLayout ?? EMPTY_MANUAL_LAYOUT}
+                  onLayoutChange={(layout) => updateManualLayout(activeDashboardTab.id, layout)}
+                />
               )}
             </div>
 
@@ -757,40 +792,182 @@ export default function Dashboard() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function ManualTabBuilder({ tabTitle }: { tabTitle: string }) {
+const PIVOT_DND_PREFIX = 'worthiq:pivot:';
+const PALETTE_FIELDS = ['Date', 'Merchant', 'Category', 'Amount', 'Account', 'Ticker'] as const;
+
+type PivotDragPayload = { field: string; from?: { zone: PivotZone; index: number } };
+
+function encodePivotDrag(p: PivotDragPayload): string {
+  return PIVOT_DND_PREFIX + JSON.stringify(p);
+}
+
+function decodePivotDrag(dt: DataTransfer): PivotDragPayload | null {
+  const text = dt.getData('text/plain');
+  if (!text.startsWith(PIVOT_DND_PREFIX)) return null;
+  try {
+    const o = JSON.parse(text.slice(PIVOT_DND_PREFIX.length)) as PivotDragPayload;
+    if (typeof o.field === 'string') return o;
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function applyPivotDrop(
+  layout: ManualPivotLayout,
+  target: PivotZone,
+  field: string,
+  from: { zone: PivotZone; index: number } | null,
+): ManualPivotLayout {
+  const next: ManualPivotLayout = {
+    filters: [...layout.filters],
+    rows: [...layout.rows],
+    columns: [...layout.columns],
+    values: [...layout.values],
+  };
+
+  if (from) {
+    const src = next[from.zone];
+    if (from.index < 0 || from.index >= src.length || src[from.index] !== field) return layout;
+    src.splice(from.index, 1);
+  }
+
+  if (next[target].includes(field)) return layout;
+
+  next[target].push(field);
+  return next;
+}
+
+function removePivotField(layout: ManualPivotLayout, zone: PivotZone, index: number): ManualPivotLayout {
+  const next: ManualPivotLayout = {
+    filters: [...layout.filters],
+    rows: [...layout.rows],
+    columns: [...layout.columns],
+    values: [...layout.values],
+  };
+  next[zone].splice(index, 1);
+  return next;
+}
+
+function ManualTabBuilder({
+  tabTitle,
+  layout,
+  onLayoutChange,
+}: {
+  tabTitle: string;
+  layout: ManualPivotLayout;
+  onLayoutChange: (layout: ManualPivotLayout) => void;
+}) {
+  const [overZone, setOverZone] = useState<PivotZone | null>(null);
+
+  const onDragOverZone = (e: React.DragEvent, zone: PivotZone) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = decodePivotDrag(e.dataTransfer)?.from ? 'move' : 'copy';
+    setOverZone(zone);
+  };
+
+  const onDragLeaveZone = (e: React.DragEvent) => {
+    const el = e.currentTarget as HTMLElement;
+    const rel = e.relatedTarget as Node | null;
+    if (rel && el.contains(rel)) return;
+    setOverZone(null);
+  };
+
+  const onDropZone = (e: React.DragEvent, zone: PivotZone) => {
+    e.preventDefault();
+    setOverZone(null);
+    const payload = decodePivotDrag(e.dataTransfer);
+    if (!payload) return;
+    const from = payload.from ?? null;
+    const next = applyPivotDrop(layout, zone, payload.field, from);
+    onLayoutChange(next);
+  };
+
+  const startPaletteDrag = (e: React.DragEvent, field: string) => {
+    e.dataTransfer.setData('text/plain', encodePivotDrag({ field }));
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const startShelfDrag = (e: React.DragEvent, field: string, zone: PivotZone, index: number) => {
+    e.dataTransfer.setData('text/plain', encodePivotDrag({ field, from: { zone, index } }));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const zoneMeta: { zone: PivotZone; label: string; hint: string }[] = [
+    { zone: 'filters', label: 'Filters', hint: 'Narrow the dataset (e.g. Category, Account).' },
+    { zone: 'rows', label: 'Rows', hint: 'Down the left side of the pivot.' },
+    { zone: 'columns', label: 'Columns', hint: 'Across the top.' },
+    { zone: 'values', label: 'Values', hint: 'What to aggregate (e.g. Amount).' },
+  ];
+
   return (
-    <div className="space-y-6 mb-8 max-w-4xl">
+    <div className="space-y-6 mb-8 max-w-4xl" onDragEnd={() => setOverZone(null)}>
       <p className="text-sm text-slate-400">
-        Manual builder for <span className="text-white font-semibold">{tabTitle}</span>. Drag fields into the areas below to shape a pivot-style view. Drop targets and persistence will evolve in future releases.
+        Manual builder for <span className="text-white font-semibold">{tabTitle}</span>. Drag fields into Filters, Rows, Columns, or Values. Layout is saved on this tab. Remove a chip with × or drag it to another zone.
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          ['Rows', 'Dimensions down the side (e.g. date, merchant, category)'],
-          ['Columns', 'Split across columns'],
-          ['Values', 'Sum, average, or count of amounts'],
-        ].map(([title, hint]) => (
-          <div
-            key={title}
-            className="rounded-xl border border-dashed border-slate-600 bg-[#0D1117]/80 p-4 min-h-[120px] hover:border-slate-500 transition-colors"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">{title}</p>
-            <p className="text-xs text-slate-600">{hint}</p>
-          </div>
-        ))}
-      </div>
+
       <div className="rounded-xl border border-slate-800 bg-[#11141B] p-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">Fields</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">Field list</p>
         <div className="flex flex-wrap gap-2">
-          {['Date', 'Merchant', 'Category', 'Amount', 'Account', 'Ticker'].map((f) => (
+          {PALETTE_FIELDS.map((f) => (
             <span
               key={f}
               draggable
-              className="cursor-grab active:cursor-grabbing text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700"
+              onDragStart={(e) => startPaletteDrag(e, f)}
+              className="cursor-grab active:cursor-grabbing text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500 select-none"
             >
               {f}
             </span>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-4">
+        {zoneMeta.map(({ zone, label, hint }) => (
+          <div
+            key={zone}
+            onDragOver={(e) => onDragOverZone(e, zone)}
+            onDragLeave={onDragLeaveZone}
+            onDrop={(e) => onDropZone(e, zone)}
+            className={`rounded-xl border border-dashed p-4 min-h-[88px] transition-colors ${
+              overZone === zone
+                ? 'border-cyan-500/70 bg-cyan-500/10'
+                : 'border-slate-600 bg-[#0D1117]/80 hover:border-slate-500'
+            }`}
+          >
+            <div className="flex items-baseline justify-between gap-2 mb-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
+              <p className="text-[11px] text-slate-600 text-right">{hint}</p>
+            </div>
+            <div className="flex flex-wrap gap-2 min-h-[36px]">
+              {layout[zone].length === 0 ? (
+                <span className="text-xs text-slate-600 italic">Drop fields here</span>
+              ) : (
+                layout[zone].map((field, index) => (
+                  <span
+                    key={`${zone}-${field}-${index}`}
+                    draggable
+                    onDragStart={(e) => startShelfDrag(e, field, zone, index)}
+                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 border border-slate-600 cursor-grab active:cursor-grabbing select-none"
+                  >
+                    {field}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLayoutChange(removePivotField(layout, zone, index));
+                      }}
+                      className="ml-0.5 text-slate-500 hover:text-red-400 p-0.5 rounded"
+                      aria-label={`Remove ${field}`}
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
