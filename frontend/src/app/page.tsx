@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { MarketingBackdrop } from "../components/MarketingBackdrop";
 import { WorthIQLogoNav } from "../components/WorthIQLogoNav";
 import { markHomeHero, ringOffsetBlack } from "../lib/worthiq-logo-mark";
+import { TransitionLink } from "../components/PageTransitionProvider";
 
 export default function Home() {
   return (
@@ -25,19 +25,19 @@ export default function Home() {
         </div>
 
         <div className="animate-fade-up-delay-2 mt-12 flex w-full flex-col gap-3">
-          <Link
+          <TransitionLink
             href="/login"
             className="btn-on-dark-primary btn-on-dark-primary--offset-black"
           >
             Log In
-          </Link>
+          </TransitionLink>
 
-          <Link
+          <TransitionLink
             href="/signup"
             className="btn-on-dark-secondary"
           >
             Create Account
-          </Link>
+          </TransitionLink>
 
           <div className="relative my-7">
             <div className="absolute inset-0 flex items-center">
@@ -50,12 +50,12 @@ export default function Home() {
             </div>
           </div>
 
-          <Link
+          <TransitionLink
             href="/guest"
             className="animate-fade-up-delay-3 py-2 text-center text-[15px] font-semibold text-white underline decoration-white/35 underline-offset-4 transition hover:text-slate-200 hover:decoration-white/55"
           >
             Continue as Guest →
-          </Link>
+          </TransitionLink>
         </div>
       </main>
     </div>

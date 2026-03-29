@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { WorthIQLogoNav } from "../../components/WorthIQLogoNav";
 import { markSidebar, ringOffsetApp } from "../../lib/worthiq-logo-mark";
+import { usePageTransition } from "../../components/PageTransitionProvider";
 
 type Section = {
   label: string;
@@ -17,6 +18,7 @@ type Section = {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { navigate } = usePageTransition();
   const [userEmail, setUserEmail] = useState<string>("");
 
   useEffect(() => {
@@ -104,7 +106,7 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="flex items-center gap-4 border-b border-slate-800 pb-6 mb-10">
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => navigate("/dashboard")}
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
           >
             <ArrowLeft size={16} />

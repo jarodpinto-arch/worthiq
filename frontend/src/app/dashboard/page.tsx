@@ -1,36 +1,52 @@
 "use client";
 export const dynamic = "force-dynamic";
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Wallet, CreditCard, TrendingUp, BarChart2,
   Settings, LayoutDashboard, Link, Plus, AlertCircle, Building2, LineChart, Receipt,
-  Sparkles, Loader2, X, ChevronDown, LogOut,
+  Sparkles, Loader2, X, LogOut, LayoutGrid,
 } from 'lucide-react';
 import WidgetCard from '../../components/WidgetCard';
 import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
 import { markAppHeader, markSidebar, ringOffsetApp } from '../../lib/worthiq-logo-mark';
 import { getApiBase } from '../../lib/api-base';
 import { filterInvestmentTxByInstrumentKind, isOptionsLeg } from '../../lib/investment-instrument';
-const PINNED_KEY = 'worthiq_pinned_tabs';
+import { usePageTransition } from '../../components/PageTransitionProvider';
+
+const DASHBOARD_TABS_KEY = 'worthiq_dashboard_tabs_v2';
 
 function fmt(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 }
 
-const FIXED_TABS = ['overview', 'cash', 'credit', 'investments', 'options'] as const;
-type FixedTab = typeof FIXED_TABS[number];
+type AccountDetail = 'cash' | 'credit' | 'investments' | 'options' | null;
 
-const TAB_META: Record<FixedTab, { label: string; icon: React.ReactNode }> = {
-  overview:    { label: 'Overview',     icon: <LayoutDashboard size={13} /> },
-  cash:        { label: 'Cash',         icon: <Wallet size={13} /> },
-  credit:      { label: 'Credit',       icon: <CreditCard size={13} /> },
-  investments: { label: 'Investments',  icon: <TrendingUp size={13} /> },
-  options:     { label: 'Options',      icon: <BarChart2 size={13} /> },
+type DashboardTabVariant = 'example' | 'sage_widget' | 'manual';
+
+interface DashboardTab {
+  id: string;
+  title: string;
+  variant: DashboardTabVariant;
+  exampleKey?: 'spending' | 'investments';
+  widgetId?: string;
+}
+
+const DEFAULT_DASHBOARD_TABS: DashboardTab[] = [
+  { id: 'ex-spending', title: 'Spending', variant: 'example', exampleKey: 'spending' },
+  { id: 'ex-investments', title: 'Investments', variant: 'example', exampleKey: 'investments' },
+];
+
+const EXAMPLE_SPENDING_WIDGET = {
+  id: 'inline-example-spending',
+  type: 'bar' as const,
+  title: 'Spending by category',
+  config: { dataSource: 'transactions' as const, groupBy: 'category', limit: 8 },
 };
 
 export default function Dashboard() {
   const router = useRouter();
+  const { navigate } = usePageTransition();
   const [accounts, setAccounts] = useState<any[]>([]);
   const [investmentTx, setInvestmentTx] = useState<any[]>([]);
   const [securities, setSecurities] = useState<any[]>([]);
@@ -40,26 +56,30 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [userEmail, setUserEmail] = useState('');
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<string>('overview');
-  const [pinnedWidgetIds, setPinnedWidgetIds] = useState<string[]>([]);
-  const [showPinMenu, setShowPinMenu] = useState(false);
-  const pinMenuRef = useRef<HTMLDivElement>(null);
+  const [dashboardTabs, setDashboardTabs] = useState<DashboardTab[]>(DEFAULT_DASHBOARD_TABS);
+  const [activeTab, setActiveTab] = useState<string>(DEFAULT_DASHBOARD_TABS[0].id);
+  const [expandedDetail, setExpandedDetail] = useState<AccountDetail>(null);
+  const [newTabModal, setNewTabModal] = useState<'closed' | 'choose' | 'sage' | 'manual'>('closed');
+  const [manualTabTitle, setManualTabTitle] = useState('');
+  const newTabModalRef = useRef<HTMLDivElement>(null);
 
-  // Widget canvas state
   const [widgets, setWidgets] = useState<any[]>([]);
   const [widgetPrompt, setWidgetPrompt] = useState('');
   const [widgetCreating, setWidgetCreating] = useState(false);
   const [widgetPreview, setWidgetPreview] = useState<any | null>(null);
-  const [widgetDragId, setWidgetDragId] = useState<string | null>(null);
-  const widgetDragTarget = useRef<string | null>(null);
   const [optionsInstrumentFilter, setOptionsInstrumentFilter] = useState<'all' | 'options_only' | 'non_options'>('all');
 
   useEffect(() => {
     setMounted(true);
     try {
-      const pinned = localStorage.getItem(PINNED_KEY);
-      if (pinned) setPinnedWidgetIds(JSON.parse(pinned));
+      const raw = localStorage.getItem(DASHBOARD_TABS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setDashboardTabs(parsed as DashboardTab[]);
+          setActiveTab((parsed as DashboardTab[])[0].id);
+        }
+      }
     } catch {}
 
     const authToken = localStorage.getItem('authToken');
@@ -116,24 +136,24 @@ export default function Dashboard() {
     init();
   }, [router]);
 
-  // Close pin menu on outside click
   useEffect(() => {
+    if (!mounted) return;
+    try {
+      if (dashboardTabs.length === 0) localStorage.removeItem(DASHBOARD_TABS_KEY);
+      else localStorage.setItem(DASHBOARD_TABS_KEY, JSON.stringify(dashboardTabs));
+    } catch {}
+  }, [dashboardTabs, mounted]);
+
+  useEffect(() => {
+    if (newTabModal === 'closed') return;
     const handler = (e: MouseEvent) => {
-      if (pinMenuRef.current && !pinMenuRef.current.contains(e.target as Node)) {
-        setShowPinMenu(false);
+      if (newTabModalRef.current && !newTabModalRef.current.contains(e.target as Node)) {
+        setNewTabModal('closed');
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const togglePin = (widgetId: string) => {
-    setPinnedWidgetIds(prev => {
-      const next = prev.includes(widgetId) ? prev.filter(id => id !== widgetId) : [...prev, widgetId];
-      localStorage.setItem(PINNED_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
+  }, [newTabModal]);
 
   const finData = { accounts, transactions, investmentTx, securities, classifications };
 
@@ -209,7 +229,7 @@ export default function Dashboard() {
     }
   };
 
-  const saveWidget = async (preview: any) => {
+  const saveWidgetAsNewTab = async (preview: any) => {
     const authToken = localStorage.getItem('authToken');
     try {
       const res = await fetch(`${getApiBase()}/widgets`, {
@@ -219,56 +239,51 @@ export default function Dashboard() {
       });
       if (res.ok) {
         const data = await res.json();
-        setWidgets(prev => [...prev, data.widget]);
+        const w = data.widget;
+        setWidgets((prev) => [...prev, w]);
+        const newTab: DashboardTab = {
+          id: `tab-w-${w.id}`,
+          title: w.title,
+          variant: 'sage_widget',
+          widgetId: w.id,
+        };
+        setDashboardTabs((prev) => [...prev, newTab]);
+        setActiveTab(newTab.id);
         setWidgetPreview(null);
+        setWidgetPrompt('');
+        setNewTabModal('closed');
       }
     } catch {}
   };
 
-  const deleteWidget = async (id: string) => {
-    const authToken = localStorage.getItem('authToken');
-    try {
-      await fetch(`${getApiBase()}/widgets/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      setWidgets(prev => prev.filter(w => w.id !== id));
-      setPinnedWidgetIds(prev => {
-        const next = prev.filter(pid => pid !== id);
-        localStorage.setItem(PINNED_KEY, JSON.stringify(next));
-        if (activeTab === id) setActiveTab('overview');
-        return next;
-      });
-    } catch {}
+  const removeTab = async (tabId: string) => {
+    const tab = dashboardTabs.find((t) => t.id === tabId);
+    const nextTabs = dashboardTabs.filter((t) => t.id !== tabId);
+    if (tab?.variant === 'sage_widget' && tab.widgetId) {
+      const authToken = localStorage.getItem('authToken');
+      try {
+        await fetch(`${getApiBase()}/widgets/${tab.widgetId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        setWidgets((prev) => prev.filter((w) => w.id !== tab.widgetId));
+      } catch {}
+    }
+    setDashboardTabs(nextTabs);
+    if (activeTab === tabId) setActiveTab(nextTabs[0]?.id ?? '');
   };
 
-  const onWidgetDragStart = (id: string) => { setWidgetDragId(id); };
-  const onWidgetDragOver  = (e: React.DragEvent, id: string) => {
-    e.preventDefault();
-    widgetDragTarget.current = id;
+  const addManualTab = () => {
+    const title = manualTabTitle.trim() || 'Custom view';
+    const id = `tab-manual-${Date.now()}`;
+    setDashboardTabs((prev) => [...prev, { id, title, variant: 'manual' }]);
+    setActiveTab(id);
+    setManualTabTitle('');
+    setNewTabModal('closed');
   };
-  const onWidgetDragEnd = async () => {
-    if (!widgetDragId || !widgetDragTarget.current || widgetDragId === widgetDragTarget.current) {
-      setWidgetDragId(null);
-      return;
-    }
-    const newOrder = [...widgets];
-    const fromIdx = newOrder.findIndex(w => w.id === widgetDragId);
-    const toIdx   = newOrder.findIndex(w => w.id === widgetDragTarget.current);
-    const [moved] = newOrder.splice(fromIdx, 1);
-    newOrder.splice(toIdx, 0, moved);
-    const withPositions = newOrder.map((w, i) => ({ ...w, position: i }));
-    setWidgets(withPositions);
-    setWidgetDragId(null);
-    widgetDragTarget.current = null;
-    const authToken = localStorage.getItem('authToken');
-    try {
-      await fetch(`${getApiBase()}/widgets/reorder`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ order: withPositions.map(w => ({ id: w.id, position: w.position })) }),
-      });
-    } catch {}
+
+  const toggleExpanded = (key: Exclude<AccountDetail, null>) => {
+    setExpandedDetail((d) => (d === key ? null : key));
   };
 
   if (!mounted) return null;
@@ -283,16 +298,7 @@ export default function Dashboard() {
   const netWorth         = totalCash + totalInvestments - totalCredit;
   const hasAccounts      = accounts.length > 0;
 
-  const pinnedWidgets = widgets.filter(w => pinnedWidgetIds.includes(w.id));
-  const unpinnedWidgets = widgets.filter(w => !pinnedWidgetIds.includes(w.id));
-
-  // All visible tabs: fixed + pinned widget tabs
-  const visibleFixedTabs = FIXED_TABS.filter(key => {
-    if (key === 'cash' && cashAccounts.length === 0) return false;
-    if (key === 'credit' && creditAccounts.length === 0) return false;
-    if (key === 'investments' && investmentAccounts.length === 0) return false;
-    return true;
-  });
+  const activeDashboardTab = dashboardTabs.find((t) => t.id === activeTab);
 
   return (
     <div className="min-h-screen bg-[#0A0C10] text-slate-300 flex">
@@ -302,14 +308,14 @@ export default function Dashboard() {
 
         <nav className="flex-1 w-full space-y-1">
           <NavItem icon={<LayoutDashboard size={19} />} label="Dashboard" active />
-          <NavItem icon={<LineChart size={19} />}       label="Views"        onClick={() => router.push('/views')} />
-          <NavItem icon={<Receipt size={19} />}         label="Transactions" onClick={() => router.push('/transactions')} />
+          <NavItem icon={<LineChart size={19} />}       label="Views"        onClick={() => navigate('/views')} />
+          <NavItem icon={<Receipt size={19} />}         label="Transactions" onClick={() => navigate('/transactions')} />
           <NavItem
             icon={<Link size={19} />}
             label={hasAccounts ? 'Manage Accounts' : 'Connect Bank'}
-            onClick={() => router.push('/connect')}
+            onClick={() => navigate('/connect')}
           />
-          <NavItem icon={<Settings size={19} />} label="Settings" onClick={() => router.push('/settings')} />
+          <NavItem icon={<Settings size={19} />} label="Settings" onClick={() => navigate('/settings')} />
         </nav>
 
         <div className="w-full space-y-2">
@@ -351,142 +357,74 @@ export default function Dashboard() {
             <p className="text-slate-600 font-mono text-sm animate-pulse">Loading financial data...</p>
           </div>
         ) : !hasAccounts ? (
-          <EmptyState onConnect={() => router.push('/connect')} />
+          <EmptyState onConnect={() => navigate('/connect')} />
         ) : (
           <>
-            {/* ── TAB BAR ── */}
-            <div className="flex items-center gap-1 mb-8 border-b border-slate-800 pb-0 overflow-x-auto">
-              {/* Fixed tabs */}
-              {visibleFixedTabs.map(key => (
-                <TabButton
-                  key={key}
-                  label={TAB_META[key].label}
-                  icon={TAB_META[key].icon}
-                  active={activeTab === key}
-                  onClick={() => setActiveTab(key)}
+            {/* ── Summary + expandable account detail ── */}
+            <div className="space-y-6 mb-10">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+                <StatCard
+                  label="Cash & Savings"
+                  value={fmt(totalCash)}
+                  sub={`${cashAccounts.length} account${cashAccounts.length !== 1 ? 's' : ''}`}
+                  color="green"
+                  onClick={() => toggleExpanded('cash')}
+                  clickable={cashAccounts.length > 0}
+                  expanded={expandedDetail === 'cash'}
                 />
-              ))}
-
-              {/* Pinned widget tabs */}
-              {pinnedWidgets.map(w => (
-                <TabButton
-                  key={w.id}
-                  label={w.title}
-                  icon={<Sparkles size={12} />}
-                  active={activeTab === w.id}
-                  onClick={() => setActiveTab(w.id)}
-                  onClose={() => {
-                    togglePin(w.id);
-                    if (activeTab === w.id) setActiveTab('overview');
-                  }}
+                <StatCard
+                  label="Outstanding Credit"
+                  value={fmt(totalCredit)}
+                  sub={`${creditAccounts.length} card${creditAccounts.length !== 1 ? 's' : ''}`}
+                  color="red"
+                  onClick={() => toggleExpanded('credit')}
+                  clickable={creditAccounts.length > 0}
+                  expanded={expandedDetail === 'credit'}
                 />
-              ))}
-
-              {/* + button to pin widgets as tabs */}
-              <div className="relative ml-1 shrink-0" ref={pinMenuRef}>
-                <button
-                  onClick={() => setShowPinMenu(v => !v)}
-                  className="flex items-center gap-1 px-3 py-2.5 text-slate-600 hover:text-white transition-colors rounded-t-lg text-sm mb-[-1px]"
-                  title="Add custom tab"
-                >
-                  <Plus size={15} />
-                </button>
-
-                {showPinMenu && (
-                  <div className="absolute left-0 top-10 z-50 bg-[#11141B] border border-slate-700 rounded-xl p-2 w-60 shadow-2xl">
-                    <p className="text-[10px] text-slate-600 font-mono uppercase tracking-widest px-2 py-1.5">
-                      Pin widget as tab
-                    </p>
-                    {widgets.length === 0 ? (
-                      <p className="text-slate-500 text-xs px-2 py-2">
-                        No widgets yet — ask Sage to create one below.
-                      </p>
-                    ) : (
-                      <div className="space-y-0.5">
-                        {widgets.map(w => (
-                          <button
-                            key={w.id}
-                            onClick={() => {
-                              togglePin(w.id);
-                              if (!pinnedWidgetIds.includes(w.id)) setActiveTab(w.id);
-                              setShowPinMenu(false);
-                            }}
-                            className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-800 text-sm text-slate-300 transition-colors"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Sparkles size={12} className="text-purple-400 shrink-0" />
-                              <span className="truncate">{w.title}</span>
-                            </div>
-                            <span className={`text-[10px] font-bold ml-2 shrink-0 ${pinnedWidgetIds.includes(w.id) ? 'text-blue-400' : 'text-slate-600'}`}>
-                              {pinnedWidgetIds.includes(w.id) ? 'pinned' : 'pin'}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                <StatCard
+                  label="Investments"
+                  value={fmt(totalInvestments)}
+                  sub={`${investmentAccounts.length} account${investmentAccounts.length !== 1 ? 's' : ''}`}
+                  color="purple"
+                  onClick={() => toggleExpanded('investments')}
+                  clickable={investmentAccounts.length > 0}
+                  expanded={expandedDetail === 'investments'}
+                />
+                <StatCard
+                  label="Net Worth"
+                  value={fmt(netWorth)}
+                  sub="Total"
+                  color={netWorth >= 0 ? 'blue' : 'red'}
+                />
+                {investmentAccounts.length > 0 && (
+                  <StatCard
+                    label="Options & trades"
+                    value={investmentTx.length.toLocaleString()}
+                    sub="Brokerage legs (est.)"
+                    color="yellow"
+                    onClick={() => toggleExpanded('options')}
+                    clickable
+                    expanded={expandedDetail === 'options'}
+                  />
                 )}
               </div>
-            </div>
 
-            {/* ── TAB CONTENT ── */}
-            <div className="mb-12">
-              {activeTab === 'overview' && (
-                <div className="space-y-8">
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard
-                      label="Cash & Savings"
-                      value={fmt(totalCash)}
-                      sub={`${cashAccounts.length} account${cashAccounts.length !== 1 ? 's' : ''}`}
-                      color="green"
-                      onClick={() => setActiveTab('cash')}
-                      clickable={cashAccounts.length > 0}
-                    />
-                    <StatCard
-                      label="Outstanding Credit"
-                      value={fmt(totalCredit)}
-                      sub={`${creditAccounts.length} card${creditAccounts.length !== 1 ? 's' : ''}`}
-                      color="red"
-                      onClick={() => setActiveTab('credit')}
-                      clickable={creditAccounts.length > 0}
-                    />
-                    <StatCard
-                      label="Investments"
-                      value={fmt(totalInvestments)}
-                      sub={`${investmentAccounts.length} account${investmentAccounts.length !== 1 ? 's' : ''}`}
-                      color="purple"
-                      onClick={() => setActiveTab('investments')}
-                      clickable={investmentAccounts.length > 0}
-                    />
-                    <StatCard
-                      label="Net Worth"
-                      value={fmt(netWorth)}
-                      sub="Total"
-                      color={netWorth >= 0 ? 'blue' : 'red'}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'cash' && cashAccounts.length > 0 && (
+              {expandedDetail === 'cash' && cashAccounts.length > 0 && (
                 <Section title="Cash & Checking" icon={<Wallet size={15} />} color="green">
                   <AccountGrid accounts={cashAccounts} />
                 </Section>
               )}
-
-              {activeTab === 'credit' && creditAccounts.length > 0 && (
+              {expandedDetail === 'credit' && creditAccounts.length > 0 && (
                 <Section title="Credit Cards" icon={<CreditCard size={15} />} color="red">
                   <AccountGrid accounts={creditAccounts} showUtilization />
                 </Section>
               )}
-
-              {activeTab === 'investments' && investmentAccounts.length > 0 && (
+              {expandedDetail === 'investments' && investmentAccounts.length > 0 && (
                 <Section title="Investments" icon={<TrendingUp size={15} />} color="purple">
                   <AccountGrid accounts={investmentAccounts} />
                 </Section>
               )}
-
-              {activeTab === 'options' && (
+              {expandedDetail === 'options' && (
                 <Section title="Options & Trades" icon={<BarChart2 size={15} />} color="yellow">
                   {investmentAccounts.length === 0 ? (
                     <InfoBanner color="yellow">
@@ -538,108 +476,278 @@ export default function Dashboard() {
                   )}
                 </Section>
               )}
-
-              {/* Pinned widget tab content */}
-              {pinnedWidgets.map(w => activeTab === w.id && (
-                <div key={w.id} className="max-w-2xl">
-                  <WidgetCard
-                    widget={w}
-                    data={finData}
-                    onDelete={deleteWidget}
-                  />
-                </div>
-              ))}
             </div>
 
-            {/* ── MY WIDGETS CANVAS ── */}
+            {/* ── Custom view tabs (examples + Sage / manual) ── */}
             <div className="border-t border-slate-800 pt-8">
-              <div className="flex items-center gap-2 mb-4 text-purple-400">
-                <Sparkles size={15} />
-                <h2 className="text-[11px] font-bold uppercase tracking-widest">My Widgets</h2>
-                <span className="text-slate-700 text-[10px] font-mono ml-1">· ask Sage to build custom charts</span>
+              <div className="flex items-center gap-2 mb-4 text-slate-400">
+                <LayoutDashboard size={15} className="text-blue-400" />
+                <h2 className="text-[11px] font-bold uppercase tracking-widest">Views</h2>
+                <span className="text-slate-700 text-[10px] font-mono ml-1">· example tabs you can delete; add your own with Sage or manual builder</span>
               </div>
 
-              {/* Sage prompt */}
-              <div className="flex gap-2 mb-5">
-                <input
-                  value={widgetPrompt}
-                  onChange={e => setWidgetPrompt(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !widgetCreating && askSageWidget()}
-                  placeholder='e.g. "spending by Sage category last 90d" or "pie: options vs stocks from investment tx"'
-                  className="input-auth flex-1 min-w-0 py-2.5 text-sm focus:border-purple-500 focus:ring-purple-500/35"
-                />
+              <div className="flex items-center gap-1 mb-6 border-b border-slate-800 pb-0 overflow-x-auto">
+                {dashboardTabs.map((tab) => (
+                  <TabButton
+                    key={tab.id}
+                    label={tab.title}
+                    icon={
+                      tab.variant === 'sage_widget' ? (
+                        <Sparkles size={12} />
+                      ) : tab.variant === 'manual' ? (
+                        <LayoutGrid size={12} />
+                      ) : tab.exampleKey === 'spending' ? (
+                        <Receipt size={12} />
+                      ) : (
+                        <TrendingUp size={12} />
+                      )
+                    }
+                    active={activeTab === tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    onClose={() => void removeTab(tab.id)}
+                  />
+                ))}
                 <button
-                  onClick={askSageWidget}
-                  disabled={widgetCreating || !widgetPrompt.trim()}
-                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-all"
+                  type="button"
+                  onClick={() => {
+                    setWidgetPreview(null);
+                    setWidgetPrompt('');
+                    setNewTabModal('choose');
+                  }}
+                  className="flex items-center gap-1 px-3 py-2.5 text-slate-600 hover:text-white transition-colors rounded-t-lg text-sm mb-[-1px] shrink-0"
+                  title="New view tab"
                 >
-                  {widgetCreating ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-                  {widgetCreating ? 'Building...' : 'Build'}
+                  <Plus size={15} />
                 </button>
               </div>
 
-              {/* Widget preview */}
-              {widgetPreview && (
-                <div className="mb-5 border border-purple-500/40 rounded-2xl p-4 bg-purple-500/5">
-                  <p className="text-[11px] text-purple-400 font-bold uppercase tracking-widest mb-3">Preview — does this look right?</p>
-                  <div className="max-w-sm">
-                    <WidgetCard widget={{ id: 'preview', ...widgetPreview }} data={finData} />
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => saveWidget(widgetPreview)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-all"
-                    >
-                      Add to Dashboard
-                    </button>
-                    <button
-                      onClick={() => setWidgetPreview(null)}
-                      className="text-slate-500 hover:text-white text-sm px-4 py-2 rounded-xl transition-colors"
-                    >
-                      Discard
-                    </button>
-                  </div>
+              {dashboardTabs.length === 0 && (
+                <div className="mb-8 rounded-xl border border-dashed border-slate-700 bg-slate-900/30 p-8 text-center text-slate-500 text-sm">
+                  No view tabs yet. Use <span className="text-slate-400">+</span> to build one with Sage or the manual pivot builder.
                 </div>
               )}
 
-              {/* Saved widgets grid */}
-              {widgets.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {widgets.map(w => (
-                    <div key={w.id} className="relative group">
+              {activeDashboardTab?.variant === 'example' && activeDashboardTab.exampleKey === 'spending' && (
+                <div className="max-w-xl mb-8">
+                  <p className="text-sm text-slate-500 mb-4 max-w-2xl">
+                    Example: spending rolled up by category (Sage labels when available). Delete this tab anytime or add your own chart via{' '}
+                    <span className="text-purple-400">+</span>.
+                  </p>
+                  <WidgetCard widget={EXAMPLE_SPENDING_WIDGET} data={finData} />
+                </div>
+              )}
+
+              {activeDashboardTab?.variant === 'example' && activeDashboardTab.exampleKey === 'investments' && (
+                <div className="mb-8 space-y-6">
+                  <p className="text-sm text-slate-500 max-w-2xl">
+                    Example: brokerage activity, options vs stock legs, and recent trades — same data as the expandable &ldquo;Options & trades&rdquo; summary above.
+                  </p>
+                  {investmentAccounts.length === 0 ? (
+                    <InfoBanner color="yellow">Connect a brokerage to see investment activity here.</InfoBanner>
+                  ) : investmentTx.length === 0 ? (
+                    <InfoBanner color="blue">No investment transactions in range yet.</InfoBanner>
+                  ) : (
+                    <div className="space-y-8">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mr-1">Show</span>
+                        {([
+                          ['all', 'All trades'] as const,
+                          ['options_only', 'Options only'] as const,
+                          ['non_options', 'Stocks & other'] as const,
+                        ]).map(([k, label]) => (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => setOptionsInstrumentFilter(k)}
+                            className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-colors ${
+                              optionsInstrumentFilter === k
+                                ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-400'
+                                : 'border-slate-700 text-slate-500 hover:text-slate-300'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {filteredOptionsTx.length === 0 ? (
+                        <InfoBanner color="blue">No trades match this filter.</InfoBanner>
+                      ) : (
+                        <>
+                          <OptionsInsightsPanel transactions={filteredOptionsTx} securities={securities} />
+                          <InvestmentTxTable transactions={filteredOptionsTx} securities={securities} />
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeDashboardTab?.variant === 'sage_widget' && activeDashboardTab.widgetId && (
+                <div className="max-w-xl mb-8">
+                  {(() => {
+                    const w = widgets.find((x) => x.id === activeDashboardTab.widgetId);
+                    if (!w) {
+                      return (
+                        <InfoBanner color="blue">
+                          This chart is no longer available. Remove the tab or build a new one with Sage.
+                        </InfoBanner>
+                      );
+                    }
+                    return (
                       <WidgetCard
                         widget={w}
                         data={finData}
-                        onDelete={deleteWidget}
-                        dragging={widgetDragId === w.id}
-                        onDragStart={() => onWidgetDragStart(w.id)}
-                        onDragOver={e => onWidgetDragOver(e, w.id)}
-                        onDragEnd={onWidgetDragEnd}
+                        onDelete={() => void removeTab(activeDashboardTab.id)}
                       />
-                      <button
-                        onClick={() => {
-                          togglePin(w.id);
-                          if (!pinnedWidgetIds.includes(w.id)) setActiveTab(w.id);
-                        }}
-                        title={pinnedWidgetIds.includes(w.id) ? 'Unpin tab' : 'Pin as tab'}
-                        className={`absolute top-3 right-8 text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-all opacity-0 group-hover:opacity-100 ${
-                          pinnedWidgetIds.includes(w.id)
-                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                            : 'bg-slate-700 text-slate-400 hover:text-white border border-slate-600'
-                        }`}
-                      >
-                        {pinnedWidgetIds.includes(w.id) ? 'pinned' : 'pin tab'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : !widgetPreview && (
-                <div className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-slate-800 rounded-2xl text-slate-600 text-sm">
-                  <Sparkles size={20} className="mb-2 text-slate-700" />
-                  Ask Sage above to create your first custom widget
+                    );
+                  })()}
                 </div>
               )}
+
+              {activeDashboardTab?.variant === 'manual' && (
+                <ManualTabBuilder tabTitle={activeDashboardTab.title} />
+              )}
             </div>
+
+            {/* New tab: Sage vs manual */}
+            {newTabModal !== 'closed' && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div
+                  ref={newTabModalRef}
+                  className="w-full max-w-lg rounded-2xl border border-slate-700 bg-[#11141B] shadow-2xl p-6 space-y-5"
+                >
+                  {newTabModal === 'choose' && (
+                    <>
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-lg font-bold text-white">New view tab</h3>
+                        <button
+                          type="button"
+                          onClick={() => setNewTabModal('closed')}
+                          className="text-slate-500 hover:text-white p-1"
+                          aria-label="Close"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                      <p className="text-sm text-slate-400">
+                        How do you want to build this view? Sage turns a short description into a chart; manual gives you a pivot-style layout to arrange yourself.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setNewTabModal('sage')}
+                          className="flex flex-col items-start gap-2 rounded-xl border border-purple-500/40 bg-purple-500/10 p-4 text-left hover:bg-purple-500/15 transition-colors"
+                        >
+                          <Sparkles size={20} className="text-purple-400" />
+                          <span className="font-bold text-white">Build with Sage</span>
+                          <span className="text-xs text-slate-400">Describe the chart; we generate it and attach it to this tab.</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTabModal('manual')}
+                          className="flex flex-col items-start gap-2 rounded-xl border border-slate-600 bg-slate-800/40 p-4 text-left hover:bg-slate-800/70 transition-colors"
+                        >
+                          <LayoutGrid size={20} className="text-slate-300" />
+                          <span className="font-bold text-white">Build manually</span>
+                          <span className="text-xs text-slate-400">Drag fields into rows, columns, and values to create pivots (early preview).</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {newTabModal === 'sage' && (
+                    <>
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                          <Sparkles size={18} className="text-purple-400" /> Sage
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setNewTabModal('choose')}
+                          className="text-xs text-slate-500 hover:text-slate-300"
+                        >
+                          Back
+                        </button>
+                      </div>
+                      <p className="text-sm text-slate-400">Describe what you want on this tab. We will save it as its own chart when you confirm.</p>
+                      <div className="flex gap-2">
+                        <input
+                          value={widgetPrompt}
+                          onChange={(e) => setWidgetPrompt(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && !widgetCreating && askSageWidget()}
+                          placeholder='e.g. "pie of spending by Sage category last 90d"'
+                          className="input-auth flex-1 min-w-0 py-2.5 text-sm focus:border-purple-500 focus:ring-purple-500/35"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => askSageWidget()}
+                          disabled={widgetCreating || !widgetPrompt.trim()}
+                          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-all shrink-0"
+                        >
+                          {widgetCreating ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                          {widgetCreating ? 'Building...' : 'Build'}
+                        </button>
+                      </div>
+                      {widgetPreview && (
+                        <div className="border border-purple-500/40 rounded-xl p-4 bg-purple-500/5 space-y-3">
+                          <p className="text-[11px] text-purple-400 font-bold uppercase tracking-widest">Preview</p>
+                          <div className="max-w-sm">
+                            <WidgetCard widget={{ id: 'preview', ...widgetPreview }} data={finData} />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => saveWidgetAsNewTab(widgetPreview)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold px-4 py-2 rounded-xl"
+                            >
+                              Add as new tab
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setWidgetPreview(null)}
+                              className="text-slate-500 hover:text-white text-sm px-4 py-2"
+                            >
+                              Discard
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {newTabModal === 'manual' && (
+                    <>
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                          <LayoutGrid size={18} className="text-slate-300" /> Manual tab
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setNewTabModal('choose')}
+                          className="text-xs text-slate-500 hover:text-slate-300"
+                        >
+                          Back
+                        </button>
+                      </div>
+                      <p className="text-sm text-slate-400">Name your tab, then arrange dimensions and measures in the builder.</p>
+                      <input
+                        value={manualTabTitle}
+                        onChange={(e) => setManualTabTitle(e.target.value)}
+                        placeholder="Tab name (e.g. Q1 cash flow)"
+                        className="input-auth w-full py-2.5 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addManualTab()}
+                        className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-2.5 rounded-xl"
+                      >
+                        Create tab
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>
@@ -648,6 +756,45 @@ export default function Dashboard() {
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
+
+function ManualTabBuilder({ tabTitle }: { tabTitle: string }) {
+  return (
+    <div className="space-y-6 mb-8 max-w-4xl">
+      <p className="text-sm text-slate-400">
+        Manual builder for <span className="text-white font-semibold">{tabTitle}</span>. Drag fields into the areas below to shape a pivot-style view. Drop targets and persistence will evolve in future releases.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          ['Rows', 'Dimensions down the side (e.g. date, merchant, category)'],
+          ['Columns', 'Split across columns'],
+          ['Values', 'Sum, average, or count of amounts'],
+        ].map(([title, hint]) => (
+          <div
+            key={title}
+            className="rounded-xl border border-dashed border-slate-600 bg-[#0D1117]/80 p-4 min-h-[120px] hover:border-slate-500 transition-colors"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">{title}</p>
+            <p className="text-xs text-slate-600">{hint}</p>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border border-slate-800 bg-[#11141B] p-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">Fields</p>
+        <div className="flex flex-wrap gap-2">
+          {['Date', 'Merchant', 'Category', 'Amount', 'Account', 'Ticker'].map((f) => (
+            <span
+              key={f}
+              draggable
+              className="cursor-grab active:cursor-grabbing text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700"
+            >
+              {f}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TabButton({
   label, icon, active, onClick, onClose,
@@ -717,18 +864,24 @@ function Section({
 }
 
 function StatCard({
-  label, value, sub, color, onClick, clickable,
+  label, value, sub, color, onClick, clickable, expanded,
 }: {
-  label: string; value: string; sub?: string; color: 'blue' | 'green' | 'red' | 'purple';
-  onClick?: () => void; clickable?: boolean;
+  label: string; value: string; sub?: string; color: 'blue' | 'green' | 'red' | 'purple' | 'yellow';
+  onClick?: () => void; clickable?: boolean; expanded?: boolean;
 }) {
-  const colors = { blue: 'text-blue-400', green: 'text-green-400', red: 'text-red-400', purple: 'text-purple-400' };
+  const colors = {
+    blue: 'text-blue-400',
+    green: 'text-green-400',
+    red: 'text-red-400',
+    purple: 'text-purple-400',
+    yellow: 'text-yellow-400',
+  };
   return (
     <div
       onClick={clickable ? onClick : undefined}
-      className={`bg-[#11141B] border border-slate-800 rounded-xl p-5 transition-all ${
-        clickable ? 'cursor-pointer hover:border-slate-600 hover:bg-[#151920] group' : ''
-      }`}
+      className={`bg-[#11141B] border rounded-xl p-5 transition-all ${
+        expanded ? 'border-blue-500/50 ring-1 ring-blue-500/20' : 'border-slate-800'
+      } ${clickable ? 'cursor-pointer hover:border-slate-600 hover:bg-[#151920] group' : ''}`}
     >
       <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mb-2">{label}</p>
       <p className={`text-2xl font-black tabular-nums ${colors[color]}`}>{value}</p>
@@ -955,7 +1108,7 @@ function EmptyState({ onConnect }: { onConnect: () => void }) {
       <Building2 size={40} className="text-slate-700 mb-4" />
       <p className="text-slate-400 font-bold mb-1">No accounts connected</p>
       <p className="text-slate-600 text-sm mb-6">Link your bank, credit card, or brokerage to get started.</p>
-      <button type="button" onClick={onConnect} className="btn-on-dark-inline">
+      <button type="button" onClick={() => onConnect()} className="btn-on-dark-inline">
         <Plus size={16} />
         Connect Bank Account
       </button>
