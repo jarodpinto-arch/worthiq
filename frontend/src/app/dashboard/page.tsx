@@ -1,16 +1,17 @@
 "use client";
 export const dynamic = "force-dynamic";
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Wallet, CreditCard, TrendingUp, BarChart2,
   Settings, LayoutDashboard, Link, Plus, AlertCircle, Building2, LineChart, Receipt,
-  Sparkles, Loader2, X, ChevronDown,
+  Sparkles, Loader2, X, ChevronDown, LogOut,
 } from 'lucide-react';
 import WidgetCard from '../../components/WidgetCard';
 import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
 import { markAppHeader, markSidebar, ringOffsetApp } from '../../lib/worthiq-logo-mark';
 import { getApiBase } from '../../lib/api-base';
+import { filterInvestmentTxByInstrumentKind, isOptionsLeg } from '../../lib/investment-instrument';
 const PINNED_KEY = 'worthiq_pinned_tabs';
 
 function fmt(n: number) {
@@ -52,6 +53,7 @@ export default function Dashboard() {
   const [widgetPreview, setWidgetPreview] = useState<any | null>(null);
   const [widgetDragId, setWidgetDragId] = useState<string | null>(null);
   const widgetDragTarget = useRef<string | null>(null);
+  const [optionsInstrumentFilter, setOptionsInstrumentFilter] = useState<'all' | 'options_only' | 'non_options'>('all');
 
   useEffect(() => {
     setMounted(true);
@@ -135,18 +137,60 @@ export default function Dashboard() {
 
   const finData = { accounts, transactions, investmentTx, securities, classifications };
 
+  const filteredOptionsTx = useMemo(
+    () => filterInvestmentTxByInstrumentKind(investmentTx, securities, optionsInstrumentFilter),
+    [investmentTx, securities, optionsInstrumentFilter],
+  );
+
   const askSageWidget = async () => {
     if (!widgetPrompt.trim()) return;
     const authToken = localStorage.getItem('authToken');
     setWidgetCreating(true);
     setWidgetPreview(null);
     try {
+      const secMapCtx = new Map(securities.map(s => [s.security_id, s]));
+      let investmentOptionLegs = 0;
+      let investmentNonOptionLegs = 0;
+      for (const t of investmentTx) {
+        if (isOptionsLeg(t, secMapCtx.get(t.security_id))) investmentOptionLegs += 1;
+        else investmentNonOptionLegs += 1;
+      }
+      const spendCats: Record<string, number> = {};
+      for (const t of transactions) {
+        if (t.amount <= 0) continue;
+        const cl = classifications[t.transaction_id];
+        const c = cl?.userCategory || cl?.aiCategory || t.category?.[0] || 'Uncategorized';
+        spendCats[c] = (spendCats[c] ?? 0) + 1;
+      }
+      const topSpendingSageCategories = Object.entries(spendCats)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([name, count]) => ({ name, count }));
+      const invSageCats: Record<string, number> = {};
+      for (const t of investmentTx) {
+        const cl = classifications[t.investment_transaction_id];
+        const c = cl?.userCategory || cl?.aiCategory || 'Unclassified';
+        invSageCats[c] = (invSageCats[c] ?? 0) + 1;
+      }
+      const topInvestmentSageCategories = Object.entries(invSageCats)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([name, count]) => ({ name, count }));
+
       const context = {
         netWorth: accounts.filter(a => a.type !== 'credit').reduce((s, a) => s + (a.balances.current ?? 0), 0)
                 - accounts.filter(a => a.type === 'credit').reduce((s, a) => s + (a.balances.current ?? 0), 0),
         accountSummary: accounts.map(a => ({ name: a.name, type: a.type, balance: a.balances.current })),
-        recentTxSample: transactions.slice(0, 10).map(t => ({ name: t.merchant_name || t.name, amount: t.amount, date: t.date })),
+        recentTxSample: transactions.slice(0, 10).map(t => ({
+          name: t.merchant_name || t.name,
+          amount: t.amount,
+          date: t.date,
+          sageCategory: classifications[t.transaction_id]?.userCategory || classifications[t.transaction_id]?.aiCategory || null,
+        })),
         investmentTxCount: investmentTx.length,
+        investmentTxByInstrumentKind: { optionLegs: investmentOptionLegs, nonOptionLegs: investmentNonOptionLegs },
+        topSpendingSageCategories,
+        topInvestmentSageCategories,
       };
       const res = await fetch(`${getApiBase()}/sage/create-widget`, {
         method: 'POST',
@@ -265,19 +309,20 @@ export default function Dashboard() {
             label={hasAccounts ? 'Manage Accounts' : 'Connect Bank'}
             onClick={() => router.push('/connect')}
           />
-          <NavItem icon={<Settings size={19} />} label="Settings" />
+          <NavItem icon={<Settings size={19} />} label="Settings" onClick={() => router.push('/settings')} />
         </nav>
 
-        <div className="w-full space-y-1">
-          <p className="hidden lg:block text-[10px] text-slate-700 font-mono uppercase tracking-widest truncate px-3">
+        <div className="w-full space-y-2">
+          <p className="hidden lg:block text-[10px] text-slate-500 font-semibold uppercase tracking-widest truncate px-3">
             {userEmail}
           </p>
-          <div
+          <button
             onClick={() => { localStorage.removeItem('authToken'); router.push('/login'); }}
-            className="flex items-center gap-3 text-slate-700 hover:text-red-400 px-3 py-2 rounded-xl cursor-pointer transition-colors text-xs font-mono"
+            className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-slate-500 transition-all duration-200 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 hover:shadow-[0_0_16px_rgba(230,57,70,0.2)] active:scale-[0.98]"
           >
-            <span className="hidden lg:block">[LOGOUT]</span>
-          </div>
+            <LogOut size={18} className="shrink-0" />
+            <span className="hidden lg:block text-sm font-semibold">Log Out</span>
+          </button>
         </div>
       </aside>
 
@@ -453,13 +498,42 @@ export default function Dashboard() {
                     </InfoBanner>
                   ) : (
                     <div className="space-y-8">
-                      <OptionsInsightsPanel transactions={investmentTx} securities={securities} />
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">
-                          Recent activity
-                        </p>
-                        <InvestmentTxTable transactions={investmentTx} securities={securities} />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mr-1">Show</span>
+                        {([
+                          ['all', 'All trades'] as const,
+                          ['options_only', 'Options only'] as const,
+                          ['non_options', 'Stocks & other'] as const,
+                        ]).map(([k, label]) => (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => setOptionsInstrumentFilter(k)}
+                            className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-colors ${
+                              optionsInstrumentFilter === k
+                                ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-400'
+                                : 'border-slate-700 text-slate-500 hover:text-slate-300'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
                       </div>
+                      {filteredOptionsTx.length === 0 ? (
+                        <InfoBanner color="blue">
+                          No trades match this filter. Try &ldquo;All trades&rdquo; or connect more accounts.
+                        </InfoBanner>
+                      ) : (
+                        <>
+                          <OptionsInsightsPanel transactions={filteredOptionsTx} securities={securities} />
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">
+                              Recent activity
+                            </p>
+                            <InvestmentTxTable transactions={filteredOptionsTx} securities={securities} />
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </Section>
@@ -491,7 +565,7 @@ export default function Dashboard() {
                   value={widgetPrompt}
                   onChange={e => setWidgetPrompt(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !widgetCreating && askSageWidget()}
-                  placeholder='e.g. "bar chart of spending by category" or "options P&L by ticker"'
+                  placeholder='e.g. "spending by Sage category last 90d" or "pie: options vs stocks from investment tx"'
                   className="input-auth flex-1 min-w-0 py-2.5 text-sm focus:border-purple-500 focus:ring-purple-500/35"
                 />
                 <button
@@ -730,10 +804,8 @@ function OptionsInsightsPanel({
   for (const tx of transactions) {
     const sec = secMap.get(tx.security_id);
     const t = (tx.type || '').toLowerCase();
-    const st = (tx.subtype || '').toLowerCase();
-    const isOption =
-      sec?.type === 'derivative' || st.includes('option') || (sec?.name || '').toLowerCase().includes('option');
-    if (isOption) optionTrades += 1;
+    const opt = isOptionsLeg(tx, sec);
+    if (opt) optionTrades += 1;
     else stockEtfTrades += 1;
     if (t === 'buy') buyCount += 1;
     if (t === 'sell') sellCount += 1;
@@ -839,7 +911,7 @@ function InvestmentTxTable({ transactions, securities }: { transactions: any[]; 
           <tbody className="divide-y divide-slate-800/50">
             {transactions.slice(0, 50).map((tx, i) => {
               const sec = secMap.get(tx.security_id);
-              const isOption = sec?.type === 'derivative' || tx.subtype?.toLowerCase().includes('option');
+              const opt = isOptionsLeg(tx, sec);
               return (
                 <tr key={tx.investment_transaction_id ?? i} className="hover:bg-slate-800/20 transition-colors">
                   <td className="px-4 py-3 text-slate-400 font-mono text-xs whitespace-nowrap">{tx.date}</td>
@@ -850,7 +922,7 @@ function InvestmentTxTable({ transactions, securities }: { transactions: any[]; 
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isOption ? 'bg-yellow-500/10 text-yellow-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${opt ? 'bg-yellow-500/10 text-yellow-400' : 'bg-blue-500/10 text-blue-400'}`}>
                       {tx.subtype || tx.type || '—'}
                     </span>
                   </td>

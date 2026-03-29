@@ -16,12 +16,11 @@ export default function Home() {
             priority
             wrapperClassName={`max-w-full ${ringOffsetBlack}`}
           />
-          <p className="animate-fade-up-delay-1 mt-8 max-w-sm text-center text-[11px] font-bold uppercase tracking-[0.28em] text-worthiq-cyan">
-            See the Risk. Own the Reward.
-          </p>
-          <p className="animate-fade-up-delay-1 mt-3 max-w-md text-center text-sm leading-relaxed text-slate-400">
-            Personal finance intelligence — bank-linked insights, Sage AI, and a
-            dashboard built for decisions.
+          <h1 className="animate-fade-up-delay-1 mt-8 max-w-sm text-center text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            Master Your Capital with AI
+          </h1>
+          <p className="animate-fade-up-delay-1 mt-4 max-w-md text-center text-sm leading-relaxed text-slate-400">
+            Your own personal finance intelligence — real time bank-linked insights, Sage AI, and customizable dashboards built for your wants and needs.
           </p>
         </div>
 
