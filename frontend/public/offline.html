@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorthIQ™ — Offline</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0A0C10;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 2rem;
+      text-align: center;
+    }
+    svg { width: 64px; height: auto; }
+    h1 { font-size: 1.5rem; font-weight: 800; color: #fff; }
+    p  { font-size: 0.9rem; color: #94a3b8; max-width: 22rem; line-height: 1.6; }
+    button {
+      margin-top: 0.5rem;
+      padding: 0.85rem 2rem;
+      background: #fff;
+      color: #000;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="512" height="512" rx="112" fill="#0A0C10"/>
+    <path d="M220 60 L140 256 L184 256 L96 452 L272 284 L228 284 L304 60 Z" fill="#46C2E9"/>
+  </svg>
+  <h1>You're offline</h1>
+  <p>WorthIQ needs a connection to load your financial data. Check your network and try again.</p>
+  <button onclick="location.reload()">Try again</button>
+</body>
+</html>

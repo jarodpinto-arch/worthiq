@@ -13,12 +13,35 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "WorthIQ™",
-  description: "See the Risk. Own the Reward.",
+  description: "Master Your Capital with AI — personal finance intelligence powered by Sage AI.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "WorthIQ",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
+      <head>
+        <meta name="theme-color" content="#0A0C10" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/icon-16.png" />
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+              navigator.serviceWorker.register('/sw.js').catch(() => {});
+            });
+          }
+        `}} />
+      </head>
       <body className="antialiased bg-worthiq-surface text-slate-200 font-[family-name:var(--font-inter)]">
         <PageTransitionProvider>
           {children}
