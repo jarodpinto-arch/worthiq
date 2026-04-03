@@ -7,7 +7,7 @@ import {
   Wallet, CreditCard, TrendingUp, BarChart2,
   Plus, AlertCircle, Building2, LineChart, Receipt,
   Sparkles, Loader2, X, LayoutGrid, Menu, SlidersHorizontal,
-  ArrowUpRight, ArrowDownRight, RefreshCw, GripVertical,
+  ArrowUpRight, ArrowDownRight, RefreshCw, GripVertical, ChevronUp,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartTooltip,
@@ -15,13 +15,17 @@ import {
 } from 'recharts';
 import WidgetCard from '../../components/WidgetCard';
 import { getApiBase } from '../../lib/api-base';
+import { computeNetWorthFromAccounts } from '../../lib/net-worth';
 import { filterInvestmentTxByInstrumentKind, isOptionsLeg } from '../../lib/investment-instrument';
 import { usePageTransition } from '../../components/PageTransitionProvider';
 import { NavDrawer } from '../../components/NavDrawer';
-import { NetWorthChart } from '../../components/NetWorthChart';
+import { NetWorthChart, type NetWorthBarDrillPayload } from '../../components/NetWorthChart';
 import { ManageViewsModal } from '../../components/ManageViewsModal';
+import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
+import { ringOffsetApp } from '../../lib/worthiq-logo-mark';
 
-const DASHBOARD_TABS_KEY = 'worthiq_dashboard_tabs_v2';
+const DASHBOARD_TABS_KEY = 'worthiq_dashboard_tabs_v3';
+const DASHBOARD_TABS_LEGACY_V2 = 'worthiq_dashboard_tabs_v2';
 
 function fmt(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -62,6 +66,41 @@ const DEFAULT_DASHBOARD_TABS: DashboardTab[] = [
   { id: 'ex-spending',        title: 'Spending',    variant: 'example', exampleKey: 'spending'        },
   { id: 'ex-investments',     title: 'Investments', variant: 'example', exampleKey: 'investments'     },
 ];
+
+function mergeDashboardTabsWithDefaults(parsed: DashboardTab[] | null): DashboardTab[] {
+  const defaults = DEFAULT_DASHBOARD_TABS;
+  if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
+    return defaults.map((t) => ({ ...t }));
+  }
+
+  const defaultIds = new Set(defaults.map((d) => d.id));
+  const byId = new Map(parsed.map((t) => [t.id, t]));
+  const merged: DashboardTab[] = [];
+
+  for (const d of defaults) {
+    const ex = byId.get(d.id);
+    if (ex) {
+      merged.push({
+        ...d,
+        ...ex,
+        variant: ex.variant,
+        manualLayout: ex.manualLayout ?? d.manualLayout,
+      });
+    } else {
+      merged.push({ ...d });
+    }
+  }
+
+  for (const t of parsed) {
+    if (!defaultIds.has(t.id)) merged.push(t);
+  }
+
+  if (!merged.some((t) => !t.hidden)) {
+    return merged.map((t) => (defaultIds.has(t.id) ? { ...t, hidden: false } : t));
+  }
+
+  return merged;
+}
 
 /** Reorder visible tabs only; hidden tabs keep their slots in the full array. */
 function reorderVisibleDashboardTabs(
@@ -126,9 +165,7 @@ function buildSageFinancialContext(
     .map(([name, count]) => ({ name, count }));
 
   return {
-    netWorth:
-      accounts.filter((a) => a.type !== 'credit').reduce((s, a) => s + (a.balances.current ?? 0), 0) -
-      accounts.filter((a) => a.type === 'credit').reduce((s, a) => s + (a.balances.current ?? 0), 0),
+    netWorth: computeNetWorthFromAccounts(accounts),
     accountSummary: accounts.map((a) => ({
       name: a.name,
       institution: a.institution ?? null,
@@ -181,17 +218,21 @@ export default function Dashboard() {
   const [sageInsights, setSageInsights] = useState<string[] | null>(null);
   const [sageInsightsLoading, setSageInsightsLoading] = useState(false);
   const [sageInsightsError, setSageInsightsError] = useState<string | null>(null);
+  const [sageInsightsExpanded, setSageInsightsExpanded] = useState(false);
   const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
   const [chartFocus, setChartFocus] = useState<{ accountId?: string; institution?: string } | null>(null);
 
   useEffect(() => {
     setMounted(true);
     try {
-      const raw = localStorage.getItem(DASHBOARD_TABS_KEY);
+      const rawV3 = localStorage.getItem(DASHBOARD_TABS_KEY);
+      const rawV2 = localStorage.getItem(DASHBOARD_TABS_LEGACY_V2);
+      const raw = rawV3 ?? rawV2;
       if (raw) {
         const parsed = JSON.parse(raw) as unknown;
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const tabs = (parsed as DashboardTab[]).map((t) =>
+        if (Array.isArray(parsed)) {
+          const merged = mergeDashboardTabsWithDefaults(parsed as DashboardTab[]);
+          const tabs = merged.map((t) =>
             t.variant === 'manual'
               ? { ...t, manualLayout: t.manualLayout ?? { ...EMPTY_MANUAL_LAYOUT } }
               : t,
@@ -319,11 +360,6 @@ export default function Dashboard() {
     [accounts, transactions, investmentTx, securities, classifications],
   );
 
-  useEffect(() => {
-    if (loading || accounts.length === 0) return;
-    void fetchSageInsights();
-  }, [loading, accounts.length, fetchSageInsights]);
-
   const askSageWidget = async () => {
     if (!widgetPrompt.trim()) return;
     const authToken = localStorage.getItem('authToken');
@@ -437,33 +473,29 @@ export default function Dashboard() {
 
   const activeDashboardTab = dashboardTabs.find((t) => t.id === activeTab);
 
-  const onChartBarDrillDown = (payload: {
-    mode: 'account' | 'institution';
-    accountId?: string;
-    institution?: string;
-  }) => {
-    if (payload.mode === 'account' && payload.accountId) {
-      const acc = accounts.find((a) => a.account_id === payload.accountId);
-      setChartFocus({ accountId: payload.accountId });
-      if (acc?.type === 'depository') setExpandedDetail('cash');
-      else if (acc?.type === 'credit') setExpandedDetail('credit');
-      else if (acc?.type === 'investment') setExpandedDetail('investments');
-    } else if (payload.mode === 'institution' && payload.institution) {
-      const inst = payload.institution.trim() || 'Other';
-      setChartFocus({ institution: inst });
-      const hasInst = (list: typeof accounts) =>
-        list.some((a) => (a.institution?.trim() || 'Other') === inst);
-      if (hasInst(investmentAccounts)) setExpandedDetail('investments');
-      else if (hasInst(cashAccounts)) setExpandedDetail('cash');
-      else if (hasInst(creditAccounts)) setExpandedDetail('credit');
-    }
+  const onChartBarDrillDown = (payload: NetWorthBarDrillPayload) => {
+    const acc = accounts.find((a) => a.account_id === payload.accountId);
+    setChartFocus({ accountId: payload.accountId });
+    if (acc?.type === 'depository') setExpandedDetail('cash');
+    else if (acc?.type === 'credit') setExpandedDetail('credit');
+    else if (acc?.type === 'investment') setExpandedDetail('investments');
     requestAnimationFrame(() => {
       accountsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-slate-300">
+    <div className="relative min-h-screen bg-[#0A0C10] text-slate-300 overflow-x-hidden">
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+        <div
+          className="absolute left-1/2 top-[8%] h-[min(52vh,520px)] w-[min(96vw,780px)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(70,194,233,0.11)_0%,rgba(82,183,136,0.06)_40%,transparent_68%)] blur-3xl motion-reduce:animate-none animate-worthiq-glow-pulse"
+        />
+        <div
+          className="absolute right-[-8%] top-[38%] h-[min(42vh,400px)] w-[min(70vw,480px)] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(82,183,136,0.08)_0%,transparent_62%)] blur-3xl motion-reduce:opacity-40 animate-worthiq-glow-pulse [animation-delay:2.75s]"
+        />
+      </div>
+
+      <div className="relative z-10">
       {/* ── NAV DRAWER ── */}
       <NavDrawer
         open={drawerOpen}
@@ -488,21 +520,36 @@ export default function Dashboard() {
       />
 
       {/* ── TOP BAR ── */}
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-800 bg-[#0A0C10]/90 backdrop-blur-md px-4 py-3">
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-white"
-          aria-label="Open menu"
-        >
-          <Menu size={20} />
-        </button>
-        <span className="text-sm font-bold tracking-tight text-white">WorthIQ</span>
-        <div className="flex-1" />
-        {userEmail && (
-          <span className="hidden sm:block text-[11px] font-semibold text-slate-600 truncate max-w-[200px]">
-            {userEmail}
-          </span>
-        )}
+      <header className="sticky top-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-slate-800/90 bg-[#0A0C10]/88 backdrop-blur-md px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="flex min-w-0 items-center gap-1 justify-self-start">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-white"
+            aria-label="Open menu"
+          >
+            <Menu size={20} />
+          </button>
+          <span className="text-sm font-semibold text-slate-400">Menu</span>
+        </div>
+
+        <div className="flex flex-col items-center justify-center text-center min-w-0 px-2">
+          <WorthIQLogoNav
+            className="h-8 w-auto sm:h-9 md:h-10"
+            wrapperClassName={ringOffsetApp}
+          />
+          <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500 sm:text-[11px] sm:tracking-[0.22em]">
+            Master your capital with AI
+          </p>
+        </div>
+
+        <div className="flex justify-end min-w-0 justify-self-end">
+          {userEmail && (
+            <span className="hidden sm:block text-[11px] font-semibold text-slate-600 truncate max-w-[min(200px,28vw)] text-right">
+              {userEmail}
+            </span>
+          )}
+        </div>
       </header>
 
       {/* ── MAIN ── */}
@@ -529,6 +576,13 @@ export default function Dashboard() {
               insights={sageInsights}
               loading={sageInsightsLoading}
               error={sageInsightsError}
+              expanded={sageInsightsExpanded}
+              onExpand={() => setSageInsightsExpanded(true)}
+              onCollapse={() => setSageInsightsExpanded(false)}
+              onRequest={() => {
+                setSageInsightsExpanded(true);
+                void fetchSageInsights();
+              }}
               onRefresh={() => void fetchSageInsights()}
             />
 
@@ -665,6 +719,15 @@ export default function Dashboard() {
 
             {/* ── View tabs ── */}
             <div className="border-t border-slate-800 pt-6">
+              <div className="mb-4 space-y-1">
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Views</h2>
+                <p className="text-sm text-slate-400 max-w-2xl">
+                  Open <span className="text-slate-300">Cashflow</span>,{' '}
+                  <span className="text-slate-300">Spending</span>, and{' '}
+                  <span className="text-slate-300">Investments</span> here, or add your own with{' '}
+                  <span className="text-worthiq-cyan">+</span>. Drag the grip on each tab to reorder; use Manage Views to hide tabs.
+                </p>
+              </div>
               <div className="flex items-center gap-1 mb-0 border-b border-slate-800 pb-0 overflow-x-auto">
                 {dashboardTabs.filter((t) => !t.hidden).map((tab) => (
                   <div
@@ -976,6 +1039,7 @@ export default function Dashboard() {
           </>
         )}
       </main>
+      </div>
     </div>
   );
 }
@@ -1271,63 +1335,131 @@ function SageDashboardInsights({
   insights,
   loading,
   error,
+  expanded,
+  onExpand,
+  onCollapse,
+  onRequest,
   onRefresh,
 }: {
   insights: string[] | null;
   loading: boolean;
   error: string | null;
+  expanded: boolean;
+  onExpand: () => void;
+  onCollapse: () => void;
+  onRequest: () => void;
   onRefresh: () => void;
 }) {
+  const hasInsights = insights && insights.length > 0;
+
   return (
-    <div className="mb-8 rounded-2xl border border-purple-500/25 bg-gradient-to-br from-purple-500/[0.07] to-transparent p-5 sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <Sparkles size={18} className="text-purple-400 shrink-0" />
-          <div>
-            <h2 className="text-sm font-bold text-white">Sage insights</h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Personalized notes from your linked accounts and recent activity
-            </p>
+    <div className="mb-8 rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.05] to-transparent p-4 sm:p-5">
+      {!expanded && !hasInsights && !loading && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2">
+            <Sparkles size={18} className="text-purple-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-slate-200">Sage AI insights</p>
+              <p className="text-[12px] text-slate-500 mt-0.5 max-w-xl">
+                Optional: generate a short, personalized read on your balances and activity. Nothing is sent until you ask.
+              </p>
+            </div>
           </div>
-        </div>
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={loading}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 transition hover:border-purple-500/40 hover:text-purple-300 disabled:opacity-40"
-        >
-          <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
-      </div>
-
-      {loading && !insights?.length && (
-        <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
-          <Loader2 size={16} className="animate-spin text-purple-400" />
-          Generating insights…
+          <button
+            type="button"
+            onClick={onRequest}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600/90 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-purple-900/20 transition hover:bg-purple-500 sm:shrink-0"
+          >
+            <Sparkles size={16} />
+            Get Sage insights
+          </button>
         </div>
       )}
 
-      {error && (
-        <p className="text-sm text-amber-400/90 py-2">{error}</p>
-      )}
-
-      {!loading && !error && insights && insights.length === 0 && (
-        <p className="text-sm text-slate-500 py-2">No insights yet. Try refresh in a moment.</p>
-      )}
-
-      {insights && insights.length > 0 && (
-        <ul className="space-y-3">
-          {insights.map((line, i) => (
-            <li
-              key={i}
-              className="flex gap-3 text-sm text-slate-300 leading-relaxed border-l-2 border-purple-500/35 pl-4"
+      {!expanded && hasInsights && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-400">
+            Sage insights ready ({insights!.length} notes).{' '}
+            <button
+              type="button"
+              onClick={onExpand}
+              className="font-semibold text-purple-400 hover:text-purple-300"
             >
-              <span className="text-purple-400/80 font-mono text-xs shrink-0 w-5 pt-0.5">{i + 1}</span>
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
+              Show
+            </button>
+          </p>
+          <button
+            type="button"
+            onClick={() => void onRefresh()}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-700 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 transition hover:border-purple-500/40 hover:text-purple-300 disabled:opacity-40"
+          >
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
+      )}
+
+      {expanded && (
+        <>
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-purple-400 shrink-0" />
+              <div>
+                <h2 className="text-sm font-bold text-white">Sage insights</h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Generated from your linked data when you request it
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void onRefresh()}
+                disabled={loading}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 transition hover:border-purple-500/40 hover:text-purple-300 disabled:opacity-40"
+              >
+                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+              <button
+                type="button"
+                onClick={onCollapse}
+                className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-400 transition hover:border-slate-600 hover:text-white"
+              >
+                <ChevronUp size={14} />
+                Collapse
+              </button>
+            </div>
+          </div>
+
+          {loading && !insights?.length && (
+            <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+              <Loader2 size={16} className="animate-spin text-purple-400" />
+              Generating insights…
+            </div>
+          )}
+
+          {error && <p className="text-sm text-amber-400/90 py-2">{error}</p>}
+
+          {!loading && !error && insights && insights.length === 0 && (
+            <p className="text-sm text-slate-500 py-2">No insights returned. Try Refresh.</p>
+          )}
+
+          {insights && insights.length > 0 && (
+            <ul className="space-y-3 pt-1">
+              {insights.map((line, i) => (
+                <li
+                  key={i}
+                  className="flex gap-3 text-sm text-slate-300 leading-relaxed border-l-2 border-purple-500/35 pl-4"
+                >
+                  <span className="text-purple-400/80 font-mono text-xs shrink-0 w-5 pt-0.5">{i + 1}</span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );

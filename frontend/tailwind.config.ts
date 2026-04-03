@@ -34,6 +34,11 @@ const config: Config = {
           "0%": { opacity: "0", transform: "scale(0.92) translateY(12px)" },
           "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
         },
+        /** Soft teal/cyan ambient pulse — keep opacity-only so layout stays stable */
+        "worthiq-glow-pulse": {
+          "0%, 100%": { opacity: "0.32" },
+          "50%": { opacity: "0.52" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both",
@@ -42,6 +47,7 @@ const config: Config = {
         "fade-up-delay-3": "fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both",
         "fade-in": "fade-in 0.45s ease-out both",
         "logo-settle": "logo-settle 0.85s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "worthiq-glow-pulse": "worthiq-glow-pulse 5.5s ease-in-out infinite",
       },
     },
   },
