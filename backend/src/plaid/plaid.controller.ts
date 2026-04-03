@@ -18,8 +18,12 @@ export class PlaidController {
   constructor(private readonly plaidService: PlaidService) {}
 
   @Post('create-link-token')
-  async createLinkToken(@Request() req) {
-    return this.plaidService.createLinkToken(req.user.id);
+  async createLinkToken(
+    @Request() req,
+    @Body() body?: { platform?: 'web' | 'ios' | 'android' },
+  ) {
+    const platform = body?.platform ?? 'web';
+    return this.plaidService.createLinkToken(req.user.id, platform);
   }
 
   @Post('exchange-public-token')

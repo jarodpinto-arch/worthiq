@@ -1,8 +1,8 @@
 /**
  * WorthIQ API client — shared across all mobile screens.
- * Reads the auth token from SecureStore (biometric-protected on device).
+ * Native: SecureStore. Web preview: localStorage (SecureStore has no web native module).
  */
-import * as SecureStore from "expo-secure-store";
+import { secureDelete, secureGet, secureSet } from "./secureStorage";
 
 export const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ?? "https://api.worthiq.io";
@@ -12,15 +12,15 @@ const TOKEN_KEY = "worthiq_auth_token";
 // ── Token helpers ─────────────────────────────────────────────────────────────
 
 export async function getToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(TOKEN_KEY);
+  return secureGet(TOKEN_KEY);
 }
 
 export async function saveToken(token: string): Promise<void> {
-  return SecureStore.setItemAsync(TOKEN_KEY, token);
+  return secureSet(TOKEN_KEY, token);
 }
 
 export async function clearToken(): Promise<void> {
-  return SecureStore.deleteItemAsync(TOKEN_KEY);
+  return secureDelete(TOKEN_KEY);
 }
 
 // ── Fetch wrapper ─────────────────────────────────────────────────────────────
@@ -70,6 +70,16 @@ export async function login(email: string, password: string) {
   return data;
 }
 
+export async function register(email: string, password: string, name?: string) {
+  const data = await apiFetch<{ access_token: string }>("/auth/register", {
+    method: "POST",
+    auth: false,
+    body: JSON.stringify({ email, password, name }),
+  });
+  await saveToken(data.access_token);
+  return data;
+}
+
 export async function getProfile() {
   return apiFetch<{ email: string; id: string }>("/auth/me");
 }
@@ -82,6 +92,28 @@ export async function logout() {
 
 export async function getAccounts() {
   return apiFetch<{ accounts: any[] }>("/plaid/accounts");
+}
+
+export type PlaidPlatform = "web" | "ios" | "android";
+
+export async function createLinkToken(platform: PlaidPlatform) {
+  return apiFetch<{ link_token: string }>("/plaid/create-link-token", {
+    method: "POST",
+    body: JSON.stringify({ platform }),
+  });
+}
+
+export async function exchangePlaidPublicToken(publicToken: string) {
+  return apiFetch<{ success: boolean }>("/plaid/exchange-public-token", {
+    method: "POST",
+    body: JSON.stringify({ public_token: publicToken }),
+  });
+}
+
+export async function disconnectPlaidItem(itemId: string) {
+  return apiFetch<{ success: boolean }>(`/plaid/items/${itemId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function getTransactions() {

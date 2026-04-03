@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { theme } from "../src/theme";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,11 +16,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="light" backgroundColor="#0A0C10" />
+          <StatusBar style="light" backgroundColor={theme.bg} />
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: "#0A0C10" },
+              contentStyle: { backgroundColor: theme.bg },
               animation: "fade_from_bottom",
             }}
           >

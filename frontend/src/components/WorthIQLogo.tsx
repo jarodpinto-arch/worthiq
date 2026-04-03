@@ -39,30 +39,20 @@ export function WorthIQLogo({ className = "h-12 w-auto", variant = "default" }: 
         fill="#46C2E9"
       />
 
-      {/* "Worth" — white, bold */}
+      {/* Single run: no gap between Worth and IQ */}
       <text
         x="43"
         y="47"
         fontFamily="-apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
         fontSize="42"
-        fontWeight="700"
-        fill="white"
-        letterSpacing="-1.5"
+        letterSpacing="-2"
       >
-        Worth
-      </text>
-
-      {/* "IQ" — cyan, extra bold */}
-      <text
-        x="168"
-        y="47"
-        fontFamily="-apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
-        fontSize="42"
-        fontWeight="800"
-        fill="#46C2E9"
-        letterSpacing="-1"
-      >
-        IQ
+        <tspan fill="white" fontWeight="700">
+          Worth
+        </tspan>
+        <tspan fill="#46C2E9" fontWeight="800">
+          IQ
+        </tspan>
       </text>
     </svg>
   );

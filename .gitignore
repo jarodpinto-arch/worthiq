@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Expo local state
+.expo/
+
 # Build outputs
 dist/
 build/
@@ -39,3 +42,4 @@ coverage/
 # Next.js build
 .next/
 out/
+*.tsbuildinfo

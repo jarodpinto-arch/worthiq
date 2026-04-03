@@ -357,4 +357,53 @@ Return ONLY a valid JSON object with this exact structure, no explanation or mar
       throw err;
     }
   }
+
+  /** Short personalized bullets for the main dashboard (not chat history). */
+  async dashboardInsights(_userId: string, context: any) {
+    const system = `You are Sage — WorthIQ's personal financial intelligence AI.
+The user sees this as the primary insight card at the top of their dashboard after logging in. Write observations that feel personal and useful.
+
+LIVE FINANCIAL CONTEXT:
+${JSON.stringify(context, null, 2)}
+
+Output rules:
+- Respond ONLY with valid JSON, no markdown: {"insights": ["...", ...]}
+- Provide 4 to 6 strings. Each string is ONE short sentence, max 180 characters.
+- Use specific numbers, account names, or category names from the context when you cite facts.
+- Cover a mix when data exists: net worth / composition, cash vs debt, recent spending or income signal, brokerage or options activity if present, and one practical suggestion.
+- Be direct and warm. Do not repeat the same idea twice. Do not prefix with "Insight:" or bullet symbols.`;
+
+    try {
+      const response = await this.anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 900,
+        system,
+        messages: [
+          {
+            role: 'user',
+            content:
+              'Generate dashboard insights for this user based on the context in your system message.',
+          },
+        ],
+      });
+
+      const block = response.content.find((c) => c.type === 'text');
+      if (!block || !('text' in block)) {
+        return { insights: [] as string[] };
+      }
+
+      const raw = block.text
+        .trim()
+        .replace(/^```(?:json)?\n?/, '')
+        .replace(/\n?```$/, '');
+      const parsed = JSON.parse(raw) as { insights?: string[] };
+      const insights = Array.isArray(parsed.insights)
+        ? parsed.insights.filter((s) => typeof s === 'string' && s.trim())
+        : [];
+      return { insights };
+    } catch (err) {
+      console.error('[Sage] dashboardInsights error:', err.message);
+      throw err;
+    }
+  }
 }

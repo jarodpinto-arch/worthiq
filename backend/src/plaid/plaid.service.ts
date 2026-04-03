@@ -10,6 +10,7 @@ import {
   PlaidEnvironments,
   Products,
   CountryCode,
+  LinkTokenCreateRequest,
 } from 'plaid';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -36,19 +37,38 @@ export class PlaidService {
     this.plaidClient = new PlaidApi(configuration);
   }
 
-  // Creates a Plaid Link token so the frontend can open the Link UI
-  async createLinkToken(userId: string) {
+  /**
+   * Creates a Plaid Link token. Web clients omit mobile fields; native clients must pass
+   * `android` or `ios` so OAuth and LinkKit receive the correct app identity (see Plaid dashboard).
+   */
+  async createLinkToken(
+    userId: string,
+    platform: 'web' | 'ios' | 'android' = 'web',
+  ) {
     // Transactions is required for checking/savings/credit (and most banks). Requiring
     // Investments in `products` forces at least one investment account — users with only
     // cash/credit hit "No investment accounts". Investments is optional when supported.
-    const response = await this.plaidClient.linkTokenCreate({
+    const request: LinkTokenCreateRequest = {
       user: { client_user_id: userId },
       client_name: 'WorthIQ',
       products: [Products.Transactions],
       optional_products: [Products.Investments],
       country_codes: [CountryCode.Us],
       language: 'en',
-    });
+    };
+
+    if (platform === 'android') {
+      request.android_package_name =
+        this.configService.get<string>('PLAID_ANDROID_PACKAGE_NAME') ||
+        'io.worthiq.app';
+    } else if (platform === 'ios') {
+      const redirect = this.configService.get<string>('PLAID_IOS_REDIRECT_URI');
+      if (redirect) {
+        request.redirect_uri = redirect;
+      }
+    }
+
+    const response = await this.plaidClient.linkTokenCreate(request);
     return { link_token: response.data.link_token };
   }
 
@@ -243,6 +263,7 @@ export class PlaidService {
         const accountsWithInstitution = response.data.accounts.map((acc) => ({
           ...acc,
           institution: item.institution,
+          plaid_item_id: item.id,
         }));
         allAccounts.push(...accountsWithInstitution);
       } catch (err) {

@@ -1,18 +1,25 @@
 "use client";
 export const dynamic = "force-dynamic";
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
   Wallet, CreditCard, TrendingUp, BarChart2,
-  Settings, LayoutDashboard, Link, Plus, AlertCircle, Building2, LineChart, Receipt,
-  Sparkles, Loader2, X, LogOut, LayoutGrid,
+  Plus, AlertCircle, Building2, LineChart, Receipt,
+  Sparkles, Loader2, X, LayoutGrid, Menu, SlidersHorizontal,
+  ArrowUpRight, ArrowDownRight, RefreshCw, GripVertical,
 } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartTooltip,
+  ResponsiveContainer, Legend,
+} from 'recharts';
 import WidgetCard from '../../components/WidgetCard';
-import { WorthIQLogoNav } from '../../components/WorthIQLogoNav';
-import { markAppHeader, markSidebar, ringOffsetApp } from '../../lib/worthiq-logo-mark';
 import { getApiBase } from '../../lib/api-base';
 import { filterInvestmentTxByInstrumentKind, isOptionsLeg } from '../../lib/investment-instrument';
 import { usePageTransition } from '../../components/PageTransitionProvider';
+import { NavDrawer } from '../../components/NavDrawer';
+import { NetWorthChart } from '../../components/NetWorthChart';
+import { ManageViewsModal } from '../../components/ManageViewsModal';
 
 const DASHBOARD_TABS_KEY = 'worthiq_dashboard_tabs_v2';
 
@@ -22,7 +29,7 @@ function fmt(n: number) {
 
 type AccountDetail = 'cash' | 'credit' | 'investments' | 'options' | null;
 
-type DashboardTabVariant = 'example' | 'sage_widget' | 'manual';
+type DashboardTabVariant = 'example' | 'sage_widget' | 'manual' | 'cashflow';
 
 type PivotZone = 'filters' | 'rows' | 'columns' | 'values';
 
@@ -44,15 +51,36 @@ interface DashboardTab {
   id: string;
   title: string;
   variant: DashboardTabVariant;
+  hidden?: boolean;
   exampleKey?: 'spending' | 'investments';
   widgetId?: string;
   manualLayout?: ManualPivotLayout;
 }
 
 const DEFAULT_DASHBOARD_TABS: DashboardTab[] = [
-  { id: 'ex-spending', title: 'Spending', variant: 'example', exampleKey: 'spending' },
-  { id: 'ex-investments', title: 'Investments', variant: 'example', exampleKey: 'investments' },
+  { id: 'builtin-cashflow',   title: 'Cashflow',    variant: 'cashflow'                                },
+  { id: 'ex-spending',        title: 'Spending',    variant: 'example', exampleKey: 'spending'        },
+  { id: 'ex-investments',     title: 'Investments', variant: 'example', exampleKey: 'investments'     },
 ];
+
+/** Reorder visible tabs only; hidden tabs keep their slots in the full array. */
+function reorderVisibleDashboardTabs(
+  full: DashboardTab[],
+  draggedId: string,
+  targetId: string,
+): DashboardTab[] {
+  const visible = full.filter((t) => !t.hidden);
+  const fromIdx = visible.findIndex((t) => t.id === draggedId);
+  const toIdx = visible.findIndex((t) => t.id === targetId);
+  if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return full;
+
+  const nextVisible = [...visible];
+  const [removed] = nextVisible.splice(fromIdx, 1);
+  nextVisible.splice(toIdx, 0, removed);
+
+  let vi = 0;
+  return full.map((t) => (t.hidden ? t : nextVisible[vi++]));
+}
 
 const EXAMPLE_SPENDING_WIDGET = {
   id: 'inline-example-spending',
@@ -60,6 +88,68 @@ const EXAMPLE_SPENDING_WIDGET = {
   title: 'Spending by category',
   config: { dataSource: 'transactions' as const, groupBy: 'category', limit: 8 },
 };
+
+function buildSageFinancialContext(
+  accounts: any[],
+  transactions: any[],
+  investmentTx: any[],
+  securities: any[],
+  classifications: Record<string, any>,
+) {
+  const secMapCtx = new Map(securities.map((s) => [s.security_id, s]));
+  let investmentOptionLegs = 0;
+  let investmentNonOptionLegs = 0;
+  for (const t of investmentTx) {
+    if (isOptionsLeg(t, secMapCtx.get(t.security_id))) investmentOptionLegs += 1;
+    else investmentNonOptionLegs += 1;
+  }
+  const spendCats: Record<string, number> = {};
+  for (const t of transactions) {
+    if (t.amount <= 0) continue;
+    const cl = classifications[t.transaction_id];
+    const c = cl?.userCategory || cl?.aiCategory || t.category?.[0] || 'Uncategorized';
+    spendCats[c] = (spendCats[c] ?? 0) + 1;
+  }
+  const topSpendingSageCategories = Object.entries(spendCats)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([name, count]) => ({ name, count }));
+  const invSageCats: Record<string, number> = {};
+  for (const t of investmentTx) {
+    const cl = classifications[t.investment_transaction_id];
+    const c = cl?.userCategory || cl?.aiCategory || 'Unclassified';
+    invSageCats[c] = (invSageCats[c] ?? 0) + 1;
+  }
+  const topInvestmentSageCategories = Object.entries(invSageCats)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([name, count]) => ({ name, count }));
+
+  return {
+    netWorth:
+      accounts.filter((a) => a.type !== 'credit').reduce((s, a) => s + (a.balances.current ?? 0), 0) -
+      accounts.filter((a) => a.type === 'credit').reduce((s, a) => s + (a.balances.current ?? 0), 0),
+    accountSummary: accounts.map((a) => ({
+      name: a.name,
+      institution: a.institution ?? null,
+      type: a.type,
+      balance: a.balances.current,
+    })),
+    recentTxSample: transactions.slice(0, 15).map((t) => ({
+      name: t.merchant_name || t.name,
+      amount: t.amount,
+      date: t.date,
+      sageCategory:
+        classifications[t.transaction_id]?.userCategory ||
+        classifications[t.transaction_id]?.aiCategory ||
+        null,
+    })),
+    investmentTxCount: investmentTx.length,
+    investmentTxByInstrumentKind: { optionLegs: investmentOptionLegs, nonOptionLegs: investmentNonOptionLegs },
+    topSpendingSageCategories,
+    topInvestmentSageCategories,
+  };
+}
 
 export default function Dashboard() {
   const router = useRouter();
@@ -76,15 +166,23 @@ export default function Dashboard() {
   const [dashboardTabs, setDashboardTabs] = useState<DashboardTab[]>(DEFAULT_DASHBOARD_TABS);
   const [activeTab, setActiveTab] = useState<string>(DEFAULT_DASHBOARD_TABS[0].id);
   const [expandedDetail, setExpandedDetail] = useState<AccountDetail>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [manageViewsOpen, setManageViewsOpen] = useState(false);
   const [newTabModal, setNewTabModal] = useState<'closed' | 'choose' | 'sage' | 'manual'>('closed');
   const [manualTabTitle, setManualTabTitle] = useState('');
   const newTabModalRef = useRef<HTMLDivElement>(null);
+  const accountsSectionRef = useRef<HTMLDivElement>(null);
 
   const [widgets, setWidgets] = useState<any[]>([]);
   const [widgetPrompt, setWidgetPrompt] = useState('');
   const [widgetCreating, setWidgetCreating] = useState(false);
   const [widgetPreview, setWidgetPreview] = useState<any | null>(null);
   const [optionsInstrumentFilter, setOptionsInstrumentFilter] = useState<'all' | 'options_only' | 'non_options'>('all');
+  const [sageInsights, setSageInsights] = useState<string[] | null>(null);
+  const [sageInsightsLoading, setSageInsightsLoading] = useState(false);
+  const [sageInsightsError, setSageInsightsError] = useState<string | null>(null);
+  const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
+  const [chartFocus, setChartFocus] = useState<{ accountId?: string; institution?: string } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -99,7 +197,8 @@ export default function Dashboard() {
               : t,
           );
           setDashboardTabs(tabs);
-          setActiveTab(tabs[0].id);
+          const firstVisible = tabs.find((t) => !t.hidden) ?? tabs[0];
+          if (firstVisible) setActiveTab(firstVisible.id);
         }
       }
     } catch {}
@@ -184,56 +283,60 @@ export default function Dashboard() {
     [investmentTx, securities, optionsInstrumentFilter],
   );
 
+  const fetchSageInsights = useCallback(
+    async () => {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken || accounts.length === 0) return;
+      setSageInsightsLoading(true);
+      setSageInsightsError(null);
+      try {
+        const context = buildSageFinancialContext(
+          accounts,
+          transactions,
+          investmentTx,
+          securities,
+          classifications,
+        );
+        const res = await fetch(`${getApiBase()}/sage/dashboard-insights`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+          body: JSON.stringify({ context }),
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || res.statusText);
+        }
+        const data = await res.json();
+        setSageInsights(Array.isArray(data.insights) ? data.insights : []);
+      } catch (e: unknown) {
+        console.error('Sage insights error:', e);
+        setSageInsightsError(e instanceof Error ? e.message : 'Could not load insights');
+        setSageInsights(null);
+      } finally {
+        setSageInsightsLoading(false);
+      }
+    },
+    [accounts, transactions, investmentTx, securities, classifications],
+  );
+
+  useEffect(() => {
+    if (loading || accounts.length === 0) return;
+    void fetchSageInsights();
+  }, [loading, accounts.length, fetchSageInsights]);
+
   const askSageWidget = async () => {
     if (!widgetPrompt.trim()) return;
     const authToken = localStorage.getItem('authToken');
     setWidgetCreating(true);
     setWidgetPreview(null);
     try {
-      const secMapCtx = new Map(securities.map(s => [s.security_id, s]));
-      let investmentOptionLegs = 0;
-      let investmentNonOptionLegs = 0;
-      for (const t of investmentTx) {
-        if (isOptionsLeg(t, secMapCtx.get(t.security_id))) investmentOptionLegs += 1;
-        else investmentNonOptionLegs += 1;
-      }
-      const spendCats: Record<string, number> = {};
-      for (const t of transactions) {
-        if (t.amount <= 0) continue;
-        const cl = classifications[t.transaction_id];
-        const c = cl?.userCategory || cl?.aiCategory || t.category?.[0] || 'Uncategorized';
-        spendCats[c] = (spendCats[c] ?? 0) + 1;
-      }
-      const topSpendingSageCategories = Object.entries(spendCats)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([name, count]) => ({ name, count }));
-      const invSageCats: Record<string, number> = {};
-      for (const t of investmentTx) {
-        const cl = classifications[t.investment_transaction_id];
-        const c = cl?.userCategory || cl?.aiCategory || 'Unclassified';
-        invSageCats[c] = (invSageCats[c] ?? 0) + 1;
-      }
-      const topInvestmentSageCategories = Object.entries(invSageCats)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([name, count]) => ({ name, count }));
-
-      const context = {
-        netWorth: accounts.filter(a => a.type !== 'credit').reduce((s, a) => s + (a.balances.current ?? 0), 0)
-                - accounts.filter(a => a.type === 'credit').reduce((s, a) => s + (a.balances.current ?? 0), 0),
-        accountSummary: accounts.map(a => ({ name: a.name, type: a.type, balance: a.balances.current })),
-        recentTxSample: transactions.slice(0, 10).map(t => ({
-          name: t.merchant_name || t.name,
-          amount: t.amount,
-          date: t.date,
-          sageCategory: classifications[t.transaction_id]?.userCategory || classifications[t.transaction_id]?.aiCategory || null,
-        })),
-        investmentTxCount: investmentTx.length,
-        investmentTxByInstrumentKind: { optionLegs: investmentOptionLegs, nonOptionLegs: investmentNonOptionLegs },
-        topSpendingSageCategories,
-        topInvestmentSageCategories,
-      };
+      const context = buildSageFinancialContext(
+        accounts,
+        transactions,
+        investmentTx,
+        securities,
+        classifications,
+      );
       const res = await fetch(`${getApiBase()}/sage/create-widget`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
@@ -292,7 +395,9 @@ export default function Dashboard() {
       } catch {}
     }
     setDashboardTabs(nextTabs);
-    if (activeTab === tabId) setActiveTab(nextTabs[0]?.id ?? '');
+    if (activeTab === tabId) {
+      setActiveTab(nextTabs.find((t) => !t.hidden)?.id ?? nextTabs[0]?.id ?? '');
+    }
   };
 
   const addManualTab = () => {
@@ -314,6 +419,7 @@ export default function Dashboard() {
   };
 
   const toggleExpanded = (key: Exclude<AccountDetail, null>) => {
+    setChartFocus(null);
     setExpandedDetail((d) => (d === key ? null : key));
   };
 
@@ -331,57 +437,76 @@ export default function Dashboard() {
 
   const activeDashboardTab = dashboardTabs.find((t) => t.id === activeTab);
 
+  const onChartBarDrillDown = (payload: {
+    mode: 'account' | 'institution';
+    accountId?: string;
+    institution?: string;
+  }) => {
+    if (payload.mode === 'account' && payload.accountId) {
+      const acc = accounts.find((a) => a.account_id === payload.accountId);
+      setChartFocus({ accountId: payload.accountId });
+      if (acc?.type === 'depository') setExpandedDetail('cash');
+      else if (acc?.type === 'credit') setExpandedDetail('credit');
+      else if (acc?.type === 'investment') setExpandedDetail('investments');
+    } else if (payload.mode === 'institution' && payload.institution) {
+      const inst = payload.institution.trim() || 'Other';
+      setChartFocus({ institution: inst });
+      const hasInst = (list: typeof accounts) =>
+        list.some((a) => (a.institution?.trim() || 'Other') === inst);
+      if (hasInst(investmentAccounts)) setExpandedDetail('investments');
+      else if (hasInst(cashAccounts)) setExpandedDetail('cash');
+      else if (hasInst(creditAccounts)) setExpandedDetail('credit');
+    }
+    requestAnimationFrame(() => {
+      accountsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-slate-300 flex">
-      {/* ── SIDEBAR ── */}
-      <aside className="w-20 lg:w-64 border-r border-slate-800 flex flex-col items-center lg:items-start p-6 gap-8 shrink-0">
-        <WorthIQLogoNav className={markSidebar} wrapperClassName={ringOffsetApp} />
+    <div className="min-h-screen bg-[#0A0C10] text-slate-300">
+      {/* ── NAV DRAWER ── */}
+      <NavDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        userEmail={userEmail}
+        hasAccounts={hasAccounts}
+        activePath="/dashboard"
+      />
 
-        <nav className="flex-1 w-full space-y-1">
-          <NavItem icon={<LayoutDashboard size={19} />} label="Dashboard" active />
-          <NavItem icon={<LineChart size={19} />}       label="Views"        onClick={() => navigate('/views')} />
-          <NavItem icon={<Receipt size={19} />}         label="Transactions" onClick={() => navigate('/transactions')} />
-          <NavItem
-            icon={<Link size={19} />}
-            label={hasAccounts ? 'Manage Accounts' : 'Connect Bank'}
-            onClick={() => navigate('/connect')}
-          />
-          <NavItem icon={<Settings size={19} />} label="Settings" onClick={() => navigate('/settings')} />
-        </nav>
+      {/* ── MANAGE VIEWS MODAL ── */}
+      <ManageViewsModal
+        open={manageViewsOpen}
+        onClose={() => setManageViewsOpen(false)}
+        tabs={dashboardTabs}
+        onChange={(updated) => {
+          setDashboardTabs(updated as DashboardTab[]);
+          const firstVisible = updated.find((t) => !t.hidden);
+          if (firstVisible && (!activeTab || updated.find(t => t.id === activeTab)?.hidden)) {
+            setActiveTab(firstVisible.id);
+          }
+        }}
+      />
 
-        <div className="w-full space-y-2">
-          <p className="hidden lg:block text-[10px] text-slate-500 font-semibold uppercase tracking-widest truncate px-3">
+      {/* ── TOP BAR ── */}
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-800 bg-[#0A0C10]/90 backdrop-blur-md px-4 py-3">
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-white"
+          aria-label="Open menu"
+        >
+          <Menu size={20} />
+        </button>
+        <span className="text-sm font-bold tracking-tight text-white">WorthIQ</span>
+        <div className="flex-1" />
+        {userEmail && (
+          <span className="hidden sm:block text-[11px] font-semibold text-slate-600 truncate max-w-[200px]">
             {userEmail}
-          </p>
-          <button
-            onClick={() => { localStorage.removeItem('authToken'); router.push('/login'); }}
-            className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-slate-500 transition-all duration-200 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 hover:shadow-[0_0_16px_rgba(230,57,70,0.2)] active:scale-[0.98]"
-          >
-            <LogOut size={18} className="shrink-0" />
-            <span className="hidden lg:block text-sm font-semibold">Log Out</span>
-          </button>
-        </div>
-      </aside>
+          </span>
+        )}
+      </header>
 
       {/* ── MAIN ── */}
-      <main className="flex-1 p-6 lg:p-10 overflow-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-6 mb-8">
-          <div>
-            <WorthIQLogoNav className={markAppHeader} wrapperClassName={ringOffsetApp} />
-            <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.2em] text-worthiq-cyan">
-              Financial Intelligence
-            </p>
-          </div>
-          {!loading && hasAccounts && (
-            <div className="text-right">
-              <p className="text-slate-600 text-[10px] font-mono uppercase tracking-widest mb-1">Net Worth</p>
-              <p className={`text-4xl font-black tabular-nums ${netWorth >= 0 ? 'text-white' : 'text-red-400'}`}>
-                {fmt(netWorth)}
-              </p>
-            </div>
-          )}
-        </div>
+      <main className="mx-auto max-w-5xl px-4 py-6 lg:px-8 lg:py-10">
 
         {loading ? (
           <div className="flex items-center justify-center h-64">
@@ -391,8 +516,24 @@ export default function Dashboard() {
           <EmptyState onConnect={() => navigate('/connect')} />
         ) : (
           <>
-            {/* ── Summary + expandable account detail ── */}
-            <div className="space-y-6 mb-10">
+            {/* ── NET WORTH HERO CHART ── */}
+            <div className="mb-8">
+              <NetWorthChart
+                accounts={accounts}
+                transactions={transactions}
+                onBarSegmentClick={onChartBarDrillDown}
+              />
+            </div>
+
+            <SageDashboardInsights
+              insights={sageInsights}
+              loading={sageInsightsLoading}
+              error={sageInsightsError}
+              onRefresh={() => void fetchSageInsights()}
+            />
+
+            {/* ── Account summary tiles + expandable detail ── */}
+            <div ref={accountsSectionRef} className="scroll-mt-28 space-y-6 mb-10">
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
                 <StatCard
                   label="Cash & Savings"
@@ -442,17 +583,30 @@ export default function Dashboard() {
 
               {expandedDetail === 'cash' && cashAccounts.length > 0 && (
                 <Section title="Cash & Checking" icon={<Wallet size={15} />} color="green">
-                  <AccountGrid accounts={cashAccounts} />
+                  <AccountGrid
+                    accounts={cashAccounts}
+                    highlightAccountId={chartFocus?.accountId}
+                    highlightInstitution={chartFocus?.institution}
+                  />
                 </Section>
               )}
               {expandedDetail === 'credit' && creditAccounts.length > 0 && (
                 <Section title="Credit Cards" icon={<CreditCard size={15} />} color="red">
-                  <AccountGrid accounts={creditAccounts} showUtilization />
+                  <AccountGrid
+                    accounts={creditAccounts}
+                    showUtilization
+                    highlightAccountId={chartFocus?.accountId}
+                    highlightInstitution={chartFocus?.institution}
+                  />
                 </Section>
               )}
               {expandedDetail === 'investments' && investmentAccounts.length > 0 && (
                 <Section title="Investments" icon={<TrendingUp size={15} />} color="purple">
-                  <AccountGrid accounts={investmentAccounts} />
+                  <AccountGrid
+                    accounts={investmentAccounts}
+                    highlightAccountId={chartFocus?.accountId}
+                    highlightInstitution={chartFocus?.institution}
+                  />
                 </Section>
               )}
               {expandedDetail === 'options' && (
@@ -509,48 +663,81 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* ── Custom view tabs (examples + Sage / manual) ── */}
-            <div className="border-t border-slate-800 pt-8">
-              <div className="flex items-center gap-2 mb-4 text-slate-400">
-                <LayoutDashboard size={15} className="text-blue-400" />
-                <h2 className="text-[11px] font-bold uppercase tracking-widest">Views</h2>
-                <span className="text-slate-700 text-[10px] font-mono ml-1">· example tabs you can delete; add your own with Sage or manual builder</span>
-              </div>
-
-              <div className="flex items-center gap-1 mb-6 border-b border-slate-800 pb-0 overflow-x-auto">
-                {dashboardTabs.map((tab) => (
-                  <TabButton
+            {/* ── View tabs ── */}
+            <div className="border-t border-slate-800 pt-6">
+              <div className="flex items-center gap-1 mb-0 border-b border-slate-800 pb-0 overflow-x-auto">
+                {dashboardTabs.filter((t) => !t.hidden).map((tab) => (
+                  <div
                     key={tab.id}
-                    label={tab.title}
-                    icon={
-                      tab.variant === 'sage_widget' ? (
-                        <Sparkles size={12} />
-                      ) : tab.variant === 'manual' ? (
-                        <LayoutGrid size={12} />
-                      ) : tab.exampleKey === 'spending' ? (
-                        <Receipt size={12} />
-                      ) : (
-                        <TrendingUp size={12} />
-                      )
-                    }
-                    active={activeTab === tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    onClose={() => void removeTab(tab.id)}
-                  />
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', tab.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                      setDraggingTabId(tab.id);
+                    }}
+                    onDragEnd={() => setDraggingTabId(null)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const fromId = e.dataTransfer.getData('text/plain');
+                      if (!fromId || fromId === tab.id) return;
+                      setDashboardTabs((prev) => reorderVisibleDashboardTabs(prev, fromId, tab.id));
+                    }}
+                    className={`flex items-end shrink-0 mb-[-1px] rounded-t-lg transition-opacity ${
+                      draggingTabId === tab.id ? 'opacity-45' : ''
+                    }`}
+                  >
+                    <span
+                      className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 p-1 pb-2.5 border-b-2 border-transparent select-none"
+                      title="Drag to reorder"
+                      aria-hidden
+                    >
+                      <GripVertical size={14} />
+                    </span>
+                    <TabButton
+                      label={tab.title}
+                      icon={
+                        tab.variant === 'cashflow'    ? <BarChart2 size={12} /> :
+                        tab.variant === 'sage_widget' ? <Sparkles size={12} /> :
+                        tab.variant === 'manual'      ? <LayoutGrid size={12} /> :
+                        tab.exampleKey === 'spending' ? <Receipt size={12} /> :
+                                                        <TrendingUp size={12} />
+                      }
+                      active={activeTab === tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      onClose={tab.variant === 'cashflow' ? undefined : () => void removeTab(tab.id)}
+                    />
+                  </div>
                 ))}
+                {/* Add view */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setWidgetPreview(null);
-                    setWidgetPrompt('');
-                    setNewTabModal('choose');
-                  }}
-                  className="flex items-center gap-1 px-3 py-2.5 text-slate-600 hover:text-white transition-colors rounded-t-lg text-sm mb-[-1px] shrink-0"
+                  onClick={() => { setWidgetPreview(null); setWidgetPrompt(''); setNewTabModal('choose'); }}
+                  className="flex items-center gap-1 px-3 py-2.5 text-slate-600 hover:text-white transition-colors text-sm mb-[-1px] shrink-0"
                   title="New view tab"
                 >
                   <Plus size={15} />
                 </button>
+                {/* Manage views */}
+                <button
+                  type="button"
+                  onClick={() => setManageViewsOpen(true)}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-worthiq-cyan transition-colors shrink-0"
+                >
+                  <SlidersHorizontal size={13} />
+                  <span className="hidden sm:inline">Manage Views</span>
+                </button>
               </div>
+
+              {/* Cashflow tab */}
+              {activeDashboardTab?.variant === 'cashflow' && (
+                <div className="pt-8">
+                  <CashflowView transactions={transactions} classifications={classifications} />
+                </div>
+              )}
 
               {dashboardTabs.length === 0 && (
                 <div className="mb-8 rounded-xl border border-dashed border-slate-700 bg-slate-900/30 p-8 text-center text-slate-500 text-sm">
@@ -644,13 +831,15 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* New tab: Sage vs manual */}
-            {newTabModal !== 'closed' && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                <div
-                  ref={newTabModalRef}
-                  className="w-full max-w-lg rounded-2xl border border-slate-700 bg-[#11141B] shadow-2xl p-6 space-y-5"
-                >
+            {/* New tab: Sage vs manual — portal to body so fixed overlay isn’t tied to <main overflow-auto> */}
+            {mounted &&
+              newTabModal !== 'closed' &&
+              createPortal(
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                  <div
+                    ref={newTabModalRef}
+                    className="w-full max-w-lg max-h-[min(90vh,880px)] overflow-y-auto overscroll-contain rounded-2xl border border-slate-700 bg-[#11141B] shadow-2xl p-6 space-y-5"
+                  >
                   {newTabModal === 'choose' && (
                     <>
                       <div className="flex items-center justify-between gap-2">
@@ -780,9 +969,10 @@ export default function Dashboard() {
                       </button>
                     </>
                   )}
-                </div>
-              </div>
-            )}
+                  </div>
+                </div>,
+                document.body,
+              )}
           </>
         )}
       </main>
@@ -973,6 +1163,176 @@ function ManualTabBuilder({
   );
 }
 
+// ── Cashflow View ─────────────────────────────────────────────────────────────
+
+function CashflowView({ transactions, classifications }: { transactions: any[]; classifications: Record<string, any> }) {
+  const fmtC = (n: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Math.abs(n));
+
+  const monthlyData = useMemo(() => {
+    const map = new Map<string, { income: number; expenses: number }>();
+    for (const tx of transactions) {
+      if (!tx.date) continue;
+      const key = tx.date.slice(0, 7); // "YYYY-MM"
+      if (!map.has(key)) map.set(key, { income: 0, expenses: 0 });
+      const bucket = map.get(key)!;
+      // Plaid: negative = inflow (income/deposit), positive = outflow (expense)
+      if (tx.amount < 0) bucket.income += Math.abs(tx.amount);
+      else bucket.expenses += tx.amount;
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-12) // last 12 months
+      .map(([key, val]) => ({
+        month: new Date(key + '-02').toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        income: Math.round(val.income),
+        expenses: Math.round(val.expenses),
+        net: Math.round(val.income - val.expenses),
+      }));
+  }, [transactions]);
+
+  const totals = monthlyData.reduce(
+    (acc, m) => ({ income: acc.income + m.income, expenses: acc.expenses + m.expenses }),
+    { income: 0, expenses: 0 },
+  );
+  const netCashflow = totals.income - totals.expenses;
+
+  if (monthlyData.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-700 p-10 text-center text-slate-500 text-sm">
+        Connect a bank account with transaction history to see your cashflow.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 mb-8">
+      {/* Summary tiles */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl border border-slate-800 bg-[#11141B] p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Total Income</p>
+          <p className="text-2xl font-black text-emerald-400">{fmtC(totals.income)}</p>
+          <p className="text-xs text-slate-600 mt-1">Last 12 months</p>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-[#11141B] p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Total Expenses</p>
+          <p className="text-2xl font-black text-red-400">{fmtC(totals.expenses)}</p>
+          <p className="text-xs text-slate-600 mt-1">Last 12 months</p>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-[#11141B] p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Net Cashflow</p>
+          <div className="flex items-center gap-1.5">
+            {netCashflow >= 0
+              ? <ArrowUpRight size={16} className="text-emerald-400" />
+              : <ArrowDownRight size={16} className="text-red-400" />}
+            <p className={`text-2xl font-black ${netCashflow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              {fmtC(netCashflow)}
+            </p>
+          </div>
+          <p className="text-xs text-slate-600 mt-1">Last 12 months</p>
+        </div>
+      </div>
+
+      {/* Bar chart */}
+      <div className="rounded-2xl border border-slate-800 bg-[#0D1017] p-5">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">Monthly Income vs Expenses</p>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={monthlyData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }} barCategoryGap="25%">
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+              <XAxis dataKey="month" tick={{ fill: '#475569', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
+              <YAxis
+                tick={{ fill: '#475569', fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                width={44}
+              />
+              <RechartTooltip
+                contentStyle={{ background: '#0D1017', border: '1px solid #1e293b', borderRadius: 12, fontSize: 12 }}
+                labelStyle={{ color: '#94a3b8', fontWeight: 700 }}
+                formatter={(value, name) => [
+                  fmtC(typeof value === 'number' ? value : 0),
+                  name === 'income' ? 'Income' : 'Expenses',
+                ]}
+              />
+              <Legend formatter={(v) => <span style={{ color: '#94a3b8', fontSize: 11 }}>{v === 'income' ? 'Income' : 'Expenses'}</span>} />
+              <Bar dataKey="income" fill="#4ade80" radius={[4, 4, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="expenses" fill="#f87171" radius={[4, 4, 0, 0]} maxBarSize={32} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SageDashboardInsights({
+  insights,
+  loading,
+  error,
+  onRefresh,
+}: {
+  insights: string[] | null;
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="mb-8 rounded-2xl border border-purple-500/25 bg-gradient-to-br from-purple-500/[0.07] to-transparent p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <Sparkles size={18} className="text-purple-400 shrink-0" />
+          <div>
+            <h2 className="text-sm font-bold text-white">Sage insights</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Personalized notes from your linked accounts and recent activity
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 transition hover:border-purple-500/40 hover:text-purple-300 disabled:opacity-40"
+        >
+          <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+          Refresh
+        </button>
+      </div>
+
+      {loading && !insights?.length && (
+        <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+          <Loader2 size={16} className="animate-spin text-purple-400" />
+          Generating insights…
+        </div>
+      )}
+
+      {error && (
+        <p className="text-sm text-amber-400/90 py-2">{error}</p>
+      )}
+
+      {!loading && !error && insights && insights.length === 0 && (
+        <p className="text-sm text-slate-500 py-2">No insights yet. Try refresh in a moment.</p>
+      )}
+
+      {insights && insights.length > 0 && (
+        <ul className="space-y-3">
+          {insights.map((line, i) => (
+            <li
+              key={i}
+              className="flex gap-3 text-sm text-slate-300 leading-relaxed border-l-2 border-purple-500/35 pl-4"
+            >
+              <span className="text-purple-400/80 font-mono text-xs shrink-0 w-5 pt-0.5">{i + 1}</span>
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function TabButton({
   label, icon, active, onClick, onClose,
 }: {
@@ -987,11 +1347,11 @@ function TabButton({
       onClick={onClick}
       className={`group flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 cursor-pointer whitespace-nowrap transition-all shrink-0 mb-[-1px] ${
         active
-          ? 'border-blue-500 text-white'
+          ? 'border-worthiq-cyan text-white'
           : 'border-transparent text-slate-500 hover:text-slate-300 hover:border-slate-600'
       }`}
     >
-      <span className={active ? 'text-blue-400' : 'text-slate-600 group-hover:text-slate-400'}>{icon}</span>
+      <span className={active ? 'text-worthiq-cyan' : 'text-slate-600 group-hover:text-slate-400'}>{icon}</span>
       {label}
       {onClose && (
         <button
@@ -1072,15 +1432,36 @@ function StatCard({
   );
 }
 
-function AccountGrid({ accounts, showUtilization }: { accounts: any[]; showUtilization?: boolean }) {
+function AccountGrid({
+  accounts,
+  showUtilization,
+  highlightAccountId,
+  highlightInstitution,
+}: {
+  accounts: any[];
+  showUtilization?: boolean;
+  highlightAccountId?: string;
+  highlightInstitution?: string;
+}) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {accounts.map((acc, i) => {
         const current = acc.balances.current ?? 0;
         const limit   = acc.balances.limit ?? 0;
         const utilPct = showUtilization && limit > 0 ? Math.min(Math.round((current / limit) * 100), 100) : null;
+        const instKey = acc.institution?.trim() || 'Other';
+        const highlighted =
+          (highlightAccountId && acc.account_id === highlightAccountId) ||
+          (!!highlightInstitution && instKey === highlightInstitution);
         return (
-          <div key={acc.account_id ?? i} className="bg-[#11141B] border border-slate-800 rounded-xl p-5">
+          <div
+            key={acc.account_id ?? i}
+            className={`bg-[#11141B] border rounded-xl p-5 transition-shadow ${
+              highlighted
+                ? 'border-worthiq-cyan/70 ring-2 ring-worthiq-cyan/35 shadow-[0_0_24px_-4px_rgba(70,194,233,0.35)]'
+                : 'border-slate-800'
+            }`}
+          >
             <div className="flex justify-between items-start gap-2">
               <div className="min-w-0">
                 <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider truncate">

@@ -74,4 +74,12 @@ export class SageController {
       body.context,
     );
   }
+
+  @Post('dashboard-insights')
+  async dashboardInsights(
+    @Body() body: { context: any },
+    @Request() req,
+  ) {
+    return this.sageService.dashboardInsights(req.user.id, body.context ?? {});
+  }
 }

@@ -1,10 +1,8 @@
 /**
- * Biometric authentication helper.
- * On login, store the JWT in SecureStore (encrypted, device-bound).
- * On subsequent launches, prompt Face ID / fingerprint before loading data.
+ * Native: Face ID / Touch ID + secure storage flag.
  */
 import * as LocalAuthentication from "expo-local-authentication";
-import * as SecureStore from "expo-secure-store";
+import { secureDelete, secureGet, secureSet } from "./secureStorage";
 
 const BIOMETRICS_ENABLED_KEY = "worthiq_biometrics_enabled";
 
@@ -15,12 +13,16 @@ export async function isBiometricsAvailable(): Promise<boolean> {
 }
 
 export async function isBiometricsEnabled(): Promise<boolean> {
-  const val = await SecureStore.getItemAsync(BIOMETRICS_ENABLED_KEY);
+  const val = await secureGet(BIOMETRICS_ENABLED_KEY);
   return val === "true";
 }
 
 export async function setBiometricsEnabled(enabled: boolean): Promise<void> {
-  await SecureStore.setItemAsync(BIOMETRICS_ENABLED_KEY, enabled ? "true" : "false");
+  if (enabled) {
+    await secureSet(BIOMETRICS_ENABLED_KEY, "true");
+  } else {
+    await secureDelete(BIOMETRICS_ENABLED_KEY);
+  }
 }
 
 export async function authenticateWithBiometrics(): Promise<boolean> {
@@ -33,13 +35,9 @@ export async function authenticateWithBiometrics(): Promise<boolean> {
   return result.success;
 }
 
-/**
- * Gate function — resolves true if auth passes, false if cancelled.
- * Skips if biometrics not enabled or not available.
- */
 export async function requireBiometrics(): Promise<boolean> {
   const available = await isBiometricsAvailable();
   const enabled = await isBiometricsEnabled();
-  if (!available || !enabled) return true; // skip
+  if (!available || !enabled) return true;
   return authenticateWithBiometrics();
 }

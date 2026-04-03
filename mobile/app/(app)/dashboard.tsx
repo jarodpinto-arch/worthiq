@@ -5,11 +5,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { getAccounts, getProfile, logout } from "../../src/lib/api";
-
-const CYAN  = "#46C2E9";
-const BG    = "#0A0C10";
-const PANEL = "#11141B";
+import { getAccounts, getProfile } from "../../src/lib/api";
+import { theme, wordmarkIqTight } from "../../src/theme";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -48,7 +45,7 @@ export default function DashboardScreen() {
   if (loading) {
     return (
       <View style={[styles.root, { alignItems: "center", justifyContent: "center" }]}>
-        <ActivityIndicator color={CYAN} size="large" />
+        <ActivityIndicator color={theme.cyan} size="large" />
       </View>
     );
   }
@@ -61,14 +58,16 @@ export default function DashboardScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => load(true)}
-            tintColor={CYAN}
+            tintColor={theme.cyan}
           />
         }
       >
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.logoText}>Worth<Text style={{ color: CYAN }}>IQ</Text></Text>
+            <Text style={styles.logoText}>
+              Worth<Text style={[wordmarkIqTight, { color: theme.cyan }]}>IQ</Text>
+            </Text>
             <Text style={styles.headerSub}>Financial Intelligence</Text>
           </View>
           <Text style={styles.emailText}>{email}</Text>
@@ -77,16 +76,16 @@ export default function DashboardScreen() {
         {/* Net worth */}
         <View style={styles.netWorthCard}>
           <Text style={styles.netWorthLabel}>NET WORTH</Text>
-          <Text style={[styles.netWorthValue, { color: netWorth >= 0 ? "#fff" : "#ef4444" }]}>
+          <Text style={[styles.netWorthValue, { color: netWorth >= 0 ? theme.text : theme.danger }]}>
             {fmt(netWorth)}
           </Text>
         </View>
 
         {/* Summary tiles */}
         <View style={styles.tileRow}>
-          <SummaryTile label="Cash" value={fmt(totalCash)} color="#4ade80" />
-          <SummaryTile label="Credit" value={fmt(totalCredit)} color="#f87171" />
-          <SummaryTile label="Invested" value={fmt(totalInv)} color="#c084fc" />
+          <SummaryTile label="Cash" value={fmt(totalCash)} color={theme.green} />
+          <SummaryTile label="Credit" value={fmt(totalCredit)} color={theme.red} />
+          <SummaryTile label="Invested" value={fmt(totalInv)} color={theme.purple} />
         </View>
 
         {/* Account list */}
@@ -129,27 +128,27 @@ function SummaryTile({ label, value, color }: { label: string; value: string; co
 }
 
 const styles = StyleSheet.create({
-  root:            { flex: 1, backgroundColor: BG },
-  scroll:          { padding: 20, paddingBottom: 40 },
+  root:            { flex: 1, backgroundColor: theme.bg },
+  scroll:          { padding: 20, paddingBottom: 48 },
   header:          { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 },
-  logoText:        { fontSize: 28, fontWeight: "900", color: "#fff", letterSpacing: -1 },
-  headerSub:       { fontSize: 10, fontWeight: "700", color: CYAN, letterSpacing: 2, textTransform: "uppercase", marginTop: 2 },
-  emailText:       { fontSize: 11, color: "#475569", maxWidth: 140, textAlign: "right" },
-  netWorthCard:    { backgroundColor: PANEL, borderRadius: 20, padding: 24, marginBottom: 16, borderWidth: 1, borderColor: "#1e293b" },
-  netWorthLabel:   { fontSize: 10, fontWeight: "700", color: "#475569", letterSpacing: 2, marginBottom: 6 },
+  logoText:        { fontSize: 28, fontWeight: "900", color: theme.text, letterSpacing: -1.5 },
+  headerSub:       { fontSize: 10, fontWeight: "700", color: theme.cyan, letterSpacing: 2, textTransform: "uppercase", marginTop: 2 },
+  emailText:       { fontSize: 11, color: theme.textDim, maxWidth: 140, textAlign: "right" },
+  netWorthCard:    { backgroundColor: theme.panel, borderRadius: theme.radiusLg, padding: 24, marginBottom: 16, borderWidth: 1, borderColor: theme.border },
+  netWorthLabel:   { fontSize: 10, fontWeight: "700", color: theme.textDim, letterSpacing: 2, marginBottom: 6 },
   netWorthValue:   { fontSize: 40, fontWeight: "900" },
   tileRow:         { flexDirection: "row", gap: 10, marginBottom: 24 },
-  tile:            { flex: 1, backgroundColor: PANEL, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#1e293b" },
-  tileLabel:       { fontSize: 9, fontWeight: "700", color: "#475569", letterSpacing: 1.5, marginBottom: 4 },
+  tile:            { flex: 1, backgroundColor: theme.panel, borderRadius: theme.radiusSm, padding: 14, borderWidth: 1, borderColor: theme.border },
+  tileLabel:       { fontSize: 9, fontWeight: "700", color: theme.textDim, letterSpacing: 1.5, marginBottom: 4 },
   tileValue:       { fontSize: 15, fontWeight: "800" },
-  sectionLabel:    { fontSize: 10, fontWeight: "700", color: "#475569", letterSpacing: 2, marginBottom: 12 },
-  accountCard:     { flexDirection: "row", alignItems: "center", backgroundColor: PANEL, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: "#1e293b" },
-  accountName:     { fontSize: 14, fontWeight: "700", color: "#fff" },
-  accountSub:      { fontSize: 11, color: "#475569", marginTop: 2 },
-  accountBalance:  { fontSize: 16, fontWeight: "800", color: "#fff", fontVariant: ["tabular-nums"] },
+  sectionLabel:    { fontSize: 10, fontWeight: "700", color: theme.textDim, letterSpacing: 2, marginBottom: 12 },
+  accountCard:     { flexDirection: "row", alignItems: "center", backgroundColor: theme.panel, borderRadius: theme.radiusMd, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: theme.border },
+  accountName:     { fontSize: 14, fontWeight: "700", color: theme.text },
+  accountSub:      { fontSize: 11, color: theme.textDim, marginTop: 2 },
+  accountBalance:  { fontSize: 16, fontWeight: "800", color: theme.text, fontVariant: ["tabular-nums"] },
   emptyState:      { alignItems: "center", paddingVertical: 60 },
-  emptyTitle:      { fontSize: 16, fontWeight: "700", color: "#fff", marginBottom: 6 },
-  emptySub:        { fontSize: 13, color: "#475569", marginBottom: 24 },
-  connectBtn:      { backgroundColor: "#fff", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 28 },
-  connectBtnText:  { fontSize: 14, fontWeight: "800", color: "#000" },
+  emptyTitle:      { fontSize: 16, fontWeight: "700", color: theme.text, marginBottom: 6 },
+  emptySub:        { fontSize: 13, color: theme.textDim, marginBottom: 24 },
+  connectBtn:      { backgroundColor: theme.text, borderRadius: theme.radiusSm, paddingVertical: 14, paddingHorizontal: 28 },
+  connectBtnText:  { fontSize: 14, fontWeight: "800", color: theme.bg },
 });

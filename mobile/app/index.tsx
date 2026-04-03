@@ -7,6 +7,7 @@ import { View, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { getToken } from "../src/lib/api";
 import { requireBiometrics } from "../src/lib/biometrics";
+import { theme } from "../src/theme";
 
 export default function Index() {
   useEffect(() => {
@@ -33,8 +34,8 @@ export default function Index() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0A0C10", alignItems: "center", justifyContent: "center" }}>
-      <ActivityIndicator color="#46C2E9" size="large" />
+    <View style={{ flex: 1, backgroundColor: theme.bg, alignItems: "center", justifyContent: "center" }}>
+      <ActivityIndicator color={theme.cyan} size="large" />
     </View>
   );
 }
