@@ -17,6 +17,7 @@ function tracingRoot(): string {
 }
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@worthiq/core"],
   ...(!process.env.VERCEL ? { outputFileTracingRoot: tracingRoot() } : {}),
 };
 

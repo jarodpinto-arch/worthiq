@@ -5,7 +5,15 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine, Cell,
 } from 'recharts';
 import { TrendingUp, TrendingDown, BarChart2, LineChart as LineChartIcon } from 'lucide-react';
-import { computeNetWorthFromAccounts, accountsIncludedInNetWorth } from '../lib/net-worth';
+import {
+  computeNetWorthFromAccounts,
+  accountsIncludedInNetWorth,
+  NW_DISPLAY_FORMAT_KEY,
+  type NwDisplayFormat,
+  fmtCurrency,
+  fmtCurrencyPrecise,
+  formatNetWorthHeadline,
+} from '@worthiq/core';
 import { timeBucketPlanForDays, buildTimeBucketFlowData } from '../lib/net-worth-chart-buckets';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -54,33 +62,8 @@ const ACCOUNT_PALETTE = [
 ];
 
 const SELECTION_STORAGE_KEY = 'worthiq_nw_selected_accounts_v1';
-const NW_DISPLAY_FORMAT_KEY = 'worthiq_nw_display_format_v1';
-
-type NwDisplayFormat = 'compact' | 'precise';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Charts, deltas, axes — stays compact for legibility. */
-function fmtCurrency(n: number) {
-  const abs = Math.abs(n);
-  const neg = n < 0;
-  if (abs >= 1_000_000) return `${neg ? '-' : ''}$${(abs / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000)     return `${neg ? '-' : ''}$${(abs / 1_000).toFixed(0)}K`;
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
-}
-
-function fmtCurrencyPrecise(n: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n);
-}
-
-function formatNetWorthHeadline(n: number, mode: NwDisplayFormat) {
-  return mode === 'precise' ? fmtCurrencyPrecise(n) : fmtCurrency(n);
-}
 
 /** X-axis tick text for the net-worth line (calendar points). */
 function formatLineAxisDate(isoDate: string, days: number): string {

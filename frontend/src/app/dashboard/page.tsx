@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 import WidgetCard from '../../components/WidgetCard';
 import { getApiBase } from '../../lib/api-base';
-import { computeNetWorthFromAccounts } from '../../lib/net-worth';
+import { computeNetWorthFromAccounts } from '@worthiq/core';
 import { filterInvestmentTxByInstrumentKind, isOptionsLeg } from '../../lib/investment-instrument';
 import { usePageTransition } from '../../components/PageTransitionProvider';
 import { NavDrawer } from '../../components/NavDrawer';

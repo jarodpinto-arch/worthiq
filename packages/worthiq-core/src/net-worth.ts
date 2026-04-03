@@ -1,7 +1,7 @@
 /**
  * Net worth aligned with dashboard summary tiles:
  * cash (depository) + investments − credit card balances.
- * Other Plaid types (e.g. loan) are excluded so the hero matches the tiles.
+ * Other Plaid types (e.g. loan) are excluded.
  */
 export function computeNetWorthFromAccounts(
   accounts: { type: string; balances: { current: number | null } }[],

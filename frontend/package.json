@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@worthiq/core": "file:../packages/worthiq-core",
     "@vercel/analytics": "^2.0.1",
     "autoprefixer": "^10.4.23",
     "lucide-react": "^0.577.0",
