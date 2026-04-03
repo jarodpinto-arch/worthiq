@@ -48,7 +48,7 @@ export default function Signup() {
   return (
     <AuthBrandScreen
       tagline="See the Risk. Own the Reward."
-      subtitle="Create your WorthIQ account"
+      subtitle="Create your WorthIQ™ account"
     >
       <div className="relative z-[1] space-y-5">
         <div className="space-y-1.5">

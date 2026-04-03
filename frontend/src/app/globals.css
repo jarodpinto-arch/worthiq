@@ -77,13 +77,131 @@ input.input-auth:-webkit-autofill:active {
   animation-delay: 0.12s; /* lets the transition overlay start fading first */
 }
 
-/* Page transition overlay — spinning ring */
-@keyframes page-transition-spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to   { transform: translate(-50%, -50%) rotate(360deg); }
+/* Page transition — lightning sweep + veil (replaces spinning ring) */
+@keyframes worthiq-lightning-sweep {
+  from {
+    transform: translateX(-130%) rotate(32deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(130%) rotate(32deg);
+    opacity: 0;
+  }
+}
+
+@keyframes worthiq-lightning-fork {
+  from {
+    transform: translateX(-125%) rotate(24deg) scaleX(0.65);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(125%) rotate(24deg) scaleX(0.65);
+    opacity: 0;
+  }
+}
+
+@keyframes worthiq-route-veil {
+  0% {
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.92;
+  }
+  68% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.worthiq-lightning-sweep-el {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  width: min(42vmin, 520px);
+  height: 220vh;
+  margin-left: calc(min(42vmin, 520px) / -2);
+  margin-top: -110vh;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(70, 194, 233, 0.08) 32%,
+    rgba(160, 240, 255, 0.95) 50%,
+    rgba(70, 194, 233, 0.12) 68%,
+    transparent 100%
+  );
+  filter: blur(0.5px);
+  mix-blend-mode: screen;
+  transform: translateX(-130%) rotate(32deg);
+  animation: worthiq-lightning-sweep 0.42s cubic-bezier(0.22, 0.95, 0.36, 1) forwards;
+}
+
+.worthiq-lightning-fork-el {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 50%;
+  width: min(28vmin, 340px);
+  height: 200vh;
+  margin-left: calc(min(28vmin, 340px) / -2);
+  margin-top: -100vh;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 48%,
+    rgba(70, 194, 233, 0.35) 52%,
+    transparent 100%
+  );
+  opacity: 0;
+  mix-blend-mode: screen;
+  transform: translateX(-125%) rotate(24deg) scaleX(0.65);
+  animation: worthiq-lightning-fork 0.4s cubic-bezier(0.25, 0.85, 0.4, 1) 0.05s forwards;
+}
+
+.worthiq-route-veil-el {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #0a0c10;
+  pointer-events: none;
+  opacity: 0;
+  animation: worthiq-route-veil 0.88s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .worthiq-lightning-sweep-el,
+  .worthiq-lightning-fork-el {
+    animation: none !important;
+    opacity: 0 !important;
+    transform: none !important;
+  }
+
+  .worthiq-route-veil-el {
+    animation: worthiq-route-veil-reduced 0.35s ease forwards !important;
+  }
+
+  @keyframes worthiq-route-veil-reduced {
+    0% {
+      opacity: 0;
+    }
+    40% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
   .page-enter {
     animation: none;
   }

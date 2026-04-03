@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend, ReferenceLine,
+  Tooltip, ResponsiveContainer, ReferenceLine, Cell,
 } from 'recharts';
 import { TrendingUp, TrendingDown, BarChart2, LineChart as LineChartIcon } from 'lucide-react';
 import { computeNetWorthFromAccounts, accountsIncludedInNetWorth } from '../lib/net-worth';
@@ -54,15 +54,32 @@ const ACCOUNT_PALETTE = [
 ];
 
 const SELECTION_STORAGE_KEY = 'worthiq_nw_selected_accounts_v1';
+const NW_DISPLAY_FORMAT_KEY = 'worthiq_nw_display_format_v1';
+
+type NwDisplayFormat = 'compact' | 'precise';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/** Charts, deltas, axes — stays compact for legibility. */
 function fmtCurrency(n: number) {
   const abs = Math.abs(n);
   const neg = n < 0;
   if (abs >= 1_000_000) return `${neg ? '-' : ''}$${(abs / 1_000_000).toFixed(1)}M`;
   if (abs >= 1_000)     return `${neg ? '-' : ''}$${(abs / 1_000).toFixed(0)}K`;
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+}
+
+function fmtCurrencyPrecise(n: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+}
+
+function formatNetWorthHeadline(n: number, mode: NwDisplayFormat) {
+  return mode === 'precise' ? fmtCurrencyPrecise(n) : fmtCurrency(n);
 }
 
 /** X-axis tick text for the net-worth line (calendar points). */
@@ -172,46 +189,52 @@ function ChartTooltip({
   );
 }
 
-function FlowBarTooltip({
+/** Tooltip for single-bar net cash flow: same Plaid sign as raw transactions. */
+function ActivityBarTooltip({
   active,
   payload,
-  label,
+  accountIds,
   accountName,
+  accountColors,
 }: {
   active?: boolean;
   payload?: readonly any[] | any[];
-  label?: string;
+  accountIds: string[];
   accountName: (id: string) => string;
+  accountColors: Record<string, string>;
 }) {
   if (!active || !payload?.length) return null;
-  const list = Array.from(payload);
-  const rowPayload = list[0]?.payload as Record<string, unknown> | undefined;
-  const header =
-    (typeof rowPayload?.tooltipLabel === 'string' && rowPayload.tooltipLabel) || label || '';
-  const rows = list.filter(
-    (e) =>
-      e &&
-      e.dataKey &&
-      typeof e.value === 'number' &&
-      !['bucketIndex', 'bucketStart', 'bucketEnd', 'label'].includes(String(e.dataKey)),
-  );
-  const total = rows.reduce((s: number, e: any) => s + (e.value ?? 0), 0);
+  const row = payload[0]?.payload as Record<string, unknown> | undefined;
+  if (!row) return null;
+  const header = typeof row.tooltipLabel === 'string' ? row.tooltipLabel : '';
+  const netFlow = Number(row.netFlow) || 0;
+  const entries = accountIds
+    .map((id) => ({ id, v: Number(row[id]) || 0 }))
+    .filter((e) => Math.abs(e.v) > 1e-6)
+    .sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
   return (
-    <div className="rounded-xl border border-slate-700 bg-[#0D1017] px-3 py-2 shadow-xl min-w-[180px]">
+    <div className="rounded-xl border border-slate-700 bg-[#0D1017] px-3 py-2 shadow-xl min-w-[200px]">
       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 leading-snug">{header}</p>
-      <p className="text-[10px] text-slate-600 mb-2">Plaid: + outflow · − inflow</p>
-      {rows.map((entry: any) => (
-        <div key={entry.dataKey} className="flex items-center gap-2 py-0.5">
-          <span className="h-2 w-2 rounded-full shrink-0" style={{ background: entry.fill }} />
-          <span className="text-xs text-slate-400 truncate flex-1">{accountName(entry.dataKey)}</span>
-          <span className={`text-xs font-bold tabular-nums ${entry.value >= 0 ? 'text-amber-200' : 'text-emerald-300'}`}>
-            {fmtCurrency(entry.value)}
+      <p className="text-[10px] text-slate-600 mb-2 leading-relaxed">
+        Plaid amounts: positive = net money out (spending, transfers out) · negative = net money in (income, transfers in).
+      </p>
+      {entries.map((e) => (
+        <div key={e.id} className="flex items-center gap-2 py-0.5">
+          <span
+            className="h-2 w-2 rounded-full shrink-0"
+            style={{ background: accountColors[e.id] ?? '#64748b' }}
+          />
+          <span className="text-xs text-slate-400 truncate flex-1">{accountName(e.id)}</span>
+          <span className={`text-xs font-bold tabular-nums ${e.v >= 0 ? 'text-amber-200' : 'text-emerald-300'}`}>
+            {fmtCurrency(e.v)}
           </span>
         </div>
       ))}
       <div className="mt-2 border-t border-slate-800 pt-2 flex justify-between text-xs font-bold text-slate-300">
-        <span>Net in bucket</span>
-        <span className="tabular-nums">{fmtCurrency(total)}</span>
+        <span>Net in period</span>
+        <span className={`tabular-nums ${netFlow >= 0 ? 'text-amber-200' : 'text-emerald-300'}`}>
+          {fmtCurrency(netFlow)}
+        </span>
       </div>
     </div>
   );
@@ -224,6 +247,15 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
   const [accountColors, setAccountColors] = useState<Record<string, string>>({});
   const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(new Set());
+  const [nwDisplayFormat, setNwDisplayFormat] = useState<NwDisplayFormat>(() => {
+    if (typeof window === 'undefined') return 'compact';
+    try {
+      const v = localStorage.getItem(NW_DISPLAY_FORMAT_KEY);
+      return v === 'precise' ? 'precise' : 'compact';
+    } catch {
+      return 'compact';
+    }
+  });
   const selectionInitRef = useRef(false);
 
   const nwAccounts = useMemo(() => accountsIncludedInNetWorth(accounts), [accounts]);
@@ -262,6 +294,12 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
       localStorage.setItem(SELECTION_STORAGE_KEY, JSON.stringify(Array.from(selectedAccountIds)));
     } catch { /* ignore */ }
   }, [selectedAccountIds]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(NW_DISPLAY_FORMAT_KEY, nwDisplayFormat);
+    } catch { /* ignore */ }
+  }, [nwDisplayFormat]);
 
   const includedAccounts = useMemo(
     () => nwAccounts.filter((a) => selectedAccountIds.has(a.account_id)),
@@ -306,6 +344,14 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
     );
   }, [includedTx, includedAccounts, bucketPlan]);
 
+  /** One value per bucket: sum of Plaid transaction amounts (matches line-chart walk logic). */
+  const barChartData = useMemo((): Array<Record<string, number | string> & { netFlow: number }> => {
+    return barRows.map((row) => {
+      const netFlow = barAccountIds.reduce((s, id) => s + (Number(row[id]) || 0), 0);
+      return { ...row, netFlow: Math.round(netFlow * 100) / 100 };
+    });
+  }, [barRows, barAccountIds]);
+
   const headlineNetWorth = computeNetWorthFromAccounts(includedAccounts);
   const currentValue = headlineNetWorth;
   const startValue = history[0]?.value ?? 0;
@@ -335,9 +381,7 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
   const histMax = displayHistory.length ? Math.max(...displayHistory.map((p) => p.value)) : 0;
   const showLineZeroRef = chartType === 'line' && histMin < 0 && histMax > 0;
 
-  const barTotals = barRows.map((row) =>
-    barAccountIds.reduce((s, id) => s + (Number(row[id]) || 0), 0),
-  );
+  const barTotals = barChartData.map((row) => Number(row.netFlow) || 0);
   const barMin = barTotals.length ? Math.min(...barTotals) : 0;
   const barMax = barTotals.length ? Math.max(...barTotals) : 0;
   const showBarZeroRef = chartType === 'bar' && barMin < 0 && barMax > 0;
@@ -368,13 +412,35 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
       <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500 mb-1">Net Worth</p>
-          <p className={`text-4xl sm:text-5xl font-black tabular-nums leading-none ${currentValue >= 0 ? 'text-white' : 'text-red-400'}`}>
-            {fmtCurrency(currentValue)}
+          <button
+            type="button"
+            onClick={() => setNwDisplayFormat((f) => (f === 'compact' ? 'precise' : 'compact'))}
+            title={
+              nwDisplayFormat === 'compact'
+                ? 'Switch to exact dollars and cents'
+                : 'Switch to rounded summary (e.g. $81K)'
+            }
+            aria-label={`Net worth ${nwDisplayFormat === 'compact' ? 'rounded summary' : 'exact to the penny'}: ${formatNetWorthHeadline(currentValue, nwDisplayFormat)}. Click to change format.`}
+            className={`block w-full max-w-full text-left rounded-lg -mx-1 px-1 py-0.5 font-black tabular-nums leading-none outline-none transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-worthiq-cyan/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D1017] sm:-mx-1.5 sm:px-1.5 ${
+              nwDisplayFormat === 'precise' ? 'text-2xl sm:text-3xl md:text-4xl' : 'text-4xl sm:text-5xl'
+            } ${currentValue >= 0 ? 'text-white' : 'text-red-400'}`}
+          >
+            {formatNetWorthHeadline(currentValue, nwDisplayFormat)}
+          </button>
+          <p className="text-[11px] text-slate-500 mt-2 max-w-md leading-relaxed">
+            <span className="text-slate-400">Click the amount</span> to switch between{' '}
+            <span className="text-slate-300">rounded dollars</span> (whole dollars or $K / $M) and{' '}
+            <span className="text-slate-300">exact cents</span>. Your choice is saved on this device.
           </p>
-          <p className="text-[11px] text-slate-600 mt-2 max-w-md leading-relaxed">
-            Cash + investments − credit for accounts you include below
-            {partialSelection ? ' (subset of all linked accounts).' : '.'} Loans and other Plaid types stay out of this total.
+          <p className="text-[10px] text-slate-600 mt-1.5 max-w-md leading-relaxed">
+            Cash + investments − credit for the accounts you check below. Loans and other Plaid types are excluded.
           </p>
+          {partialSelection && (
+            <p className="text-[10px] text-amber-200/85 mt-2 max-w-md leading-relaxed">
+              The summary tiles under this card use <span className="font-semibold text-amber-100/90">every</span> linked account;
+              the large number here matches only the checked accounts.
+            </p>
+          )}
           <div className="flex items-center gap-1.5 mt-2">
             {isPositive
               ? <TrendingUp size={14} className="text-emerald-400" />
@@ -426,7 +492,7 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
               }`}
             >
               <BarChart2 size={13} />
-              Bars
+              Activity
             </button>
           </div>
         </div>
@@ -472,8 +538,10 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
       </div>
 
       {chartType === 'bar' && onBarSegmentClick && barAccountIds.length > 0 && (
-        <p className="text-[11px] text-slate-600 mb-3">
-          Bars = time buckets ({activeTimeframe.label === '1D' ? '24 hours' : activeTimeframe.label === '1W' ? '12 segments over the range' : activeTimeframe.label === '1M' ? '30 days' : '12 segments'}). Click a colored segment to open that account below.
+        <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+          Each bar is <span className="text-slate-300 font-semibold">net cash flow</span> in that time bucket (sum of transactions for
+          selected accounts)—not your ending balance. Orange = net outflow, green = net inflow (Plaid sign). Click a bar to jump to the
+          account that moved the most in that bucket.
         </p>
       )}
 
@@ -525,7 +593,7 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
             </AreaChart>
           ) : (
             <BarChart
-              data={barRows}
+              data={barChartData}
               margin={{ top: 8, right: 8, bottom: 20, left: 0 }}
               barCategoryGap="10%"
               barGap={2}
@@ -541,7 +609,7 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={(v) => {
-                  const row = barRows.find((r) => r.bucketIndex === v);
+                  const row = barChartData.find((r) => r.bucketIndex === v);
                   return typeof row?.axisLabel === 'string' ? row.axisLabel : '';
                 }}
                 height={28}
@@ -555,41 +623,48 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
               />
               <Tooltip
                 content={(props: any) => (
-                  <FlowBarTooltip
+                  <ActivityBarTooltip
                     active={props.active}
                     payload={props.payload}
-                    label={props.label}
+                    accountIds={barAccountIds}
                     accountName={accountName}
+                    accountColors={accountColors}
                   />
                 )}
                 cursor={{ fill: 'rgba(255,255,255,0.03)' }}
               />
-              <Legend
-                formatter={(value) => (
-                  <span style={{ color: '#94a3b8', fontSize: 11 }}>{accountName(value)}</span>
-                )}
-                wrapperStyle={{ paddingTop: 8 }}
-              />
               {showBarZeroRef && (
                 <ReferenceLine y={0} stroke="#334155" strokeDasharray="4 4" strokeOpacity={0.65} />
               )}
-              {barAccountIds.map((aid, i) => (
-                <Bar
-                  key={aid}
-                  dataKey={aid}
-                  name={aid}
-                  stackId="flow"
-                  fill={accountColors[aid] ?? ACCOUNT_PALETTE[i % ACCOUNT_PALETTE.length]}
-                  maxBarSize={activeTimeframe.days <= 1 ? 14 : 48}
-                  radius={i === barAccountIds.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
-                  cursor={onBarSegmentClick ? 'pointer' : 'default'}
-                  onClick={
-                    onBarSegmentClick
-                      ? () => onBarSegmentClick({ mode: 'account', accountId: aid })
-                      : undefined
+              <Bar
+                dataKey="netFlow"
+                name="Net cash flow"
+                maxBarSize={activeTimeframe.days <= 1 ? 16 : 52}
+                radius={[4, 4, 4, 4]}
+                cursor={onBarSegmentClick ? 'pointer' : 'default'}
+                onClick={(state: unknown) => {
+                  if (!onBarSegmentClick) return;
+                  const row = (state as { payload?: Record<string, unknown> })?.payload;
+                  if (!row || barAccountIds.length === 0) return;
+                  let best = barAccountIds[0];
+                  let bestAbs = 0;
+                  for (const id of barAccountIds) {
+                    const v = Math.abs(Number(row[id]) || 0);
+                    if (v > bestAbs) {
+                      bestAbs = v;
+                      best = id;
+                    }
                   }
-                />
-              ))}
+                  if (bestAbs > 0) onBarSegmentClick({ mode: 'account', accountId: best });
+                }}
+              >
+                {barChartData.map((entry, index) => (
+                  <Cell
+                    key={`nw-flow-${entry.bucketIndex ?? index}`}
+                    fill={(Number(entry.netFlow) || 0) >= 0 ? '#FB923C' : '#34D399'}
+                  />
+                ))}
+              </Bar>
             </BarChart>
           )}
         </ResponsiveContainer>
@@ -603,40 +678,8 @@ export function NetWorthChart({ accounts, transactions, onBarSegmentClick }: Net
 
       {chartType === 'bar' && (
         <p className="text-[10px] text-slate-600 mt-3 leading-relaxed">
-          Bar height is total Plaid-reported activity in each time bucket (stacked by account). When a transaction has no timestamp, it is spread across the calendar day that overlaps the bucket.
+          Activity bars use the same transaction sums as the line trend (walking balances backward). Untimed transactions are allocated across the part of each day that falls inside the bucket.
         </p>
-      )}
-
-      {chartType === 'bar' && barAccountIds.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-slate-800">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-3">Bar colors</p>
-          <div className="flex flex-wrap gap-2">
-            {barAccountIds.map((aid, i) => {
-              const a = nwAccounts.find((x) => x.account_id === aid);
-              return (
-                <label key={aid} className="flex items-center gap-2 cursor-pointer group">
-                  <div className="relative">
-                    <input
-                      type="color"
-                      value={accountColors[aid] ?? ACCOUNT_PALETTE[i % ACCOUNT_PALETTE.length]}
-                      onChange={(e) =>
-                        setAccountColors((prev) => ({ ...prev, [aid]: e.target.value }))
-                      }
-                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                    />
-                    <div
-                      className="h-4 w-4 rounded-full ring-2 ring-slate-700 transition group-hover:ring-white"
-                      style={{ background: accountColors[aid] ?? ACCOUNT_PALETTE[i % ACCOUNT_PALETTE.length] }}
-                    />
-                  </div>
-                  <span className="text-xs text-slate-500 group-hover:text-slate-300 transition max-w-[120px] truncate">
-                    {a?.name ?? aid}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
       )}
     </div>
   );

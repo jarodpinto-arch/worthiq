@@ -17,16 +17,36 @@ interface ManageViewsModalProps {
   onClose: () => void;
   tabs: DashboardTab[];
   onChange: (tabs: DashboardTab[]) => void;
+  /** Which tab opens when you load the dashboard (persisted by parent). */
+  defaultLandingTabId?: string | null;
+  onDefaultLandingTabSave?: (tabId: string) => void;
 }
 
-export function ManageViewsModal({ open, onClose, tabs, onChange }: ManageViewsModalProps) {
+export function ManageViewsModal({
+  open,
+  onClose,
+  tabs,
+  onChange,
+  defaultLandingTabId,
+  onDefaultLandingTabSave,
+}: ManageViewsModalProps) {
   const [local, setLocal] = useState<DashboardTab[]>(tabs);
+  const [landingPick, setLandingPick] = useState('');
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const dragOverId = useRef<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Sync when opened
-  useEffect(() => { if (open) setLocal(tabs); }, [open, tabs]);
+  useEffect(() => {
+    if (!open) return;
+    setLocal(tabs);
+    const visible = tabs.filter((t) => !t.hidden);
+    const pick =
+      defaultLandingTabId && visible.some((t) => t.id === defaultLandingTabId)
+        ? defaultLandingTabId
+        : visible[0]?.id ?? '';
+    setLandingPick(pick);
+  }, [open, tabs, defaultLandingTabId]);
 
   // Close on backdrop click
   useEffect(() => {
@@ -95,6 +115,9 @@ export function ManageViewsModal({ open, onClose, tabs, onChange }: ManageViewsM
 
   const save = () => {
     onChange(local);
+    const visible = local.filter((t) => !t.hidden);
+    const pick = visible.some((t) => t.id === landingPick) ? landingPick : (visible[0]?.id ?? '');
+    if (pick) onDefaultLandingTabSave?.(pick);
     onClose();
   };
 
@@ -112,7 +135,7 @@ export function ManageViewsModal({ open, onClose, tabs, onChange }: ManageViewsM
         <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
           <div>
             <h2 className="text-base font-bold text-white">Manage Views</h2>
-            <p className="mt-0.5 text-xs text-slate-500">Drag to reorder · toggle visibility · delete</p>
+            <p className="mt-0.5 text-xs text-slate-500">Drag to reorder · toggle visibility · delete · default landing tab</p>
           </div>
           <button
             onClick={onClose}
@@ -168,15 +191,22 @@ export function ManageViewsModal({ open, onClose, tabs, onChange }: ManageViewsM
                 </button>
               </div>
 
-              {/* Visibility toggle */}
+              {/* Visibility toggle — Overview always stays available */}
               <button
                 onClick={() => toggleVisibility(tab.id)}
+                disabled={tab.variant === 'overview'}
                 className={`rounded p-1.5 transition ${
                   tab.hidden
                     ? 'text-slate-600 hover:text-slate-300'
                     : 'text-worthiq-cyan hover:text-worthiq-cyan/70'
-                }`}
-                title={tab.hidden ? 'Show tab' : 'Hide tab'}
+                } ${tab.variant === 'overview' ? 'opacity-30 cursor-not-allowed' : ''}`}
+                title={
+                  tab.variant === 'overview'
+                    ? 'Overview is always visible'
+                    : tab.hidden
+                      ? 'Show tab'
+                      : 'Hide tab'
+                }
               >
                 {tab.hidden ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
@@ -193,6 +223,30 @@ export function ManageViewsModal({ open, onClose, tabs, onChange }: ManageViewsM
               )}
             </div>
           ))}
+        </div>
+
+        <div className="border-t border-slate-800 px-4 py-3 space-y-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Open dashboard on</p>
+          <p className="text-xs text-slate-600 mb-2">
+            Choose which view loads first. You can still switch tabs anytime.
+          </p>
+          <div className="space-y-1.5 max-h-[28vh] overflow-y-auto">
+            {local.filter((t) => !t.hidden).map((tab) => (
+              <label
+                key={tab.id}
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-slate-300 hover:border-slate-700"
+              >
+                <input
+                  type="radio"
+                  name="worthiq-landing-tab"
+                  className="border-slate-600 text-worthiq-cyan focus:ring-worthiq-cyan/40"
+                  checked={landingPick === tab.id}
+                  onChange={() => setLandingPick(tab.id)}
+                />
+                <span className="font-medium truncate">{tab.title}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Footer */}

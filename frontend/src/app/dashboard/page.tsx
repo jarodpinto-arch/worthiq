@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Wallet, CreditCard, TrendingUp, BarChart2,
   Plus, AlertCircle, Building2, LineChart, Receipt,
-  Sparkles, Loader2, X, LayoutGrid, Menu, SlidersHorizontal,
+  Sparkles, Loader2, X, LayoutGrid, LayoutDashboard, Menu, SlidersHorizontal,
   ArrowUpRight, ArrowDownRight, RefreshCw, GripVertical, ChevronUp,
 } from 'lucide-react';
 import {
@@ -26,6 +26,7 @@ import { ringOffsetApp } from '../../lib/worthiq-logo-mark';
 
 const DASHBOARD_TABS_KEY = 'worthiq_dashboard_tabs_v3';
 const DASHBOARD_TABS_LEGACY_V2 = 'worthiq_dashboard_tabs_v2';
+const DASHBOARD_DEFAULT_TAB_KEY = 'worthiq_dashboard_default_tab_v1';
 
 function fmt(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -33,7 +34,7 @@ function fmt(n: number) {
 
 type AccountDetail = 'cash' | 'credit' | 'investments' | 'options' | null;
 
-type DashboardTabVariant = 'example' | 'sage_widget' | 'manual' | 'cashflow';
+type DashboardTabVariant = 'overview' | 'example' | 'sage_widget' | 'manual' | 'cashflow';
 
 type PivotZone = 'filters' | 'rows' | 'columns' | 'values';
 
@@ -62,9 +63,10 @@ interface DashboardTab {
 }
 
 const DEFAULT_DASHBOARD_TABS: DashboardTab[] = [
-  { id: 'builtin-cashflow',   title: 'Cashflow',    variant: 'cashflow'                                },
-  { id: 'ex-spending',        title: 'Spending',    variant: 'example', exampleKey: 'spending'        },
-  { id: 'ex-investments',     title: 'Investments', variant: 'example', exampleKey: 'investments'     },
+  { id: 'builtin-overview', title: 'Overview', variant: 'overview' },
+  { id: 'builtin-cashflow', title: 'Cashflow', variant: 'cashflow' },
+  { id: 'ex-spending', title: 'Spending', variant: 'example', exampleKey: 'spending' },
+  { id: 'ex-investments', title: 'Investments', variant: 'example', exampleKey: 'investments' },
 ];
 
 function mergeDashboardTabsWithDefaults(parsed: DashboardTab[] | null): DashboardTab[] {
@@ -201,7 +203,8 @@ export default function Dashboard() {
   const [userEmail, setUserEmail] = useState('');
 
   const [dashboardTabs, setDashboardTabs] = useState<DashboardTab[]>(DEFAULT_DASHBOARD_TABS);
-  const [activeTab, setActiveTab] = useState<string>(DEFAULT_DASHBOARD_TABS[0].id);
+  const [activeTab, setActiveTab] = useState<string>('builtin-overview');
+  const [preferredLandingTabId, setPreferredLandingTabId] = useState<string | null>(null);
   const [expandedDetail, setExpandedDetail] = useState<AccountDetail>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [manageViewsOpen, setManageViewsOpen] = useState(false);
@@ -225,6 +228,8 @@ export default function Dashboard() {
   useEffect(() => {
     setMounted(true);
     try {
+      const preferredRaw = localStorage.getItem(DASHBOARD_DEFAULT_TAB_KEY);
+      setPreferredLandingTabId(preferredRaw);
       const rawV3 = localStorage.getItem(DASHBOARD_TABS_KEY);
       const rawV2 = localStorage.getItem(DASHBOARD_TABS_LEGACY_V2);
       const raw = rawV3 ?? rawV2;
@@ -238,9 +243,15 @@ export default function Dashboard() {
               : t,
           );
           setDashboardTabs(tabs);
-          const firstVisible = tabs.find((t) => !t.hidden) ?? tabs[0];
-          if (firstVisible) setActiveTab(firstVisible.id);
+          const visible = tabs.filter((t) => !t.hidden);
+          const pick =
+            preferredRaw && visible.some((t) => t.id === preferredRaw)
+              ? preferredRaw
+              : (visible[0]?.id ?? tabs[0]?.id);
+          if (pick) setActiveTab(pick);
         }
+      } else if (preferredRaw) {
+        setActiveTab(preferredRaw);
       }
     } catch {}
 
@@ -418,6 +429,7 @@ export default function Dashboard() {
   };
 
   const removeTab = async (tabId: string) => {
+    if (tabId === 'builtin-overview' || tabId === 'builtin-cashflow') return;
     const tab = dashboardTabs.find((t) => t.id === tabId);
     const nextTabs = dashboardTabs.filter((t) => t.id !== tabId);
     if (tab?.variant === 'sage_widget' && tab.widgetId) {
@@ -510,10 +522,19 @@ export default function Dashboard() {
         open={manageViewsOpen}
         onClose={() => setManageViewsOpen(false)}
         tabs={dashboardTabs}
+        defaultLandingTabId={preferredLandingTabId}
+        onDefaultLandingTabSave={(id) => {
+          try {
+            localStorage.setItem(DASHBOARD_DEFAULT_TAB_KEY, id);
+          } catch {
+            /* ignore */
+          }
+          setPreferredLandingTabId(id);
+        }}
         onChange={(updated) => {
           setDashboardTabs(updated as DashboardTab[]);
           const firstVisible = updated.find((t) => !t.hidden);
-          if (firstVisible && (!activeTab || updated.find(t => t.id === activeTab)?.hidden)) {
+          if (firstVisible && (!activeTab || updated.find((t) => t.id === activeTab)?.hidden)) {
             setActiveTab(firstVisible.id);
           }
         }}
@@ -563,31 +584,122 @@ export default function Dashboard() {
           <EmptyState onConnect={() => navigate('/connect')} />
         ) : (
           <>
-            {/* ── NET WORTH HERO CHART ── */}
-            <div className="mb-8">
-              <NetWorthChart
-                accounts={accounts}
-                transactions={transactions}
-                onBarSegmentClick={onChartBarDrillDown}
-              />
+            {/* ── Dashboard views (tabs) — same row for Overview + all other views ── */}
+            <div className="mb-6">
+              <div className="mb-3 space-y-1">
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">WorthIQ™ dashboard</h2>
+                <p className="text-sm text-slate-500 max-w-2xl">
+                  Overview is your default home (net worth, Sage, accounts). Switch tabs for Cashflow, Spending, Investments, or custom views. Drag to reorder; use Manage Views to hide tabs or choose which view opens first when you sign in.
+                </p>
+              </div>
+              <div className="flex items-center gap-1 mb-0 border-b border-slate-800 pb-0 overflow-x-auto">
+                {dashboardTabs.filter((t) => !t.hidden).map((tab) => (
+                  <div
+                    key={tab.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', tab.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                      setDraggingTabId(tab.id);
+                    }}
+                    onDragEnd={() => setDraggingTabId(null)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const fromId = e.dataTransfer.getData('text/plain');
+                      if (!fromId || fromId === tab.id) return;
+                      setDashboardTabs((prev) => reorderVisibleDashboardTabs(prev, fromId, tab.id));
+                    }}
+                    className={`flex items-end shrink-0 mb-[-1px] rounded-t-lg transition-opacity ${
+                      draggingTabId === tab.id ? 'opacity-45' : ''
+                    }`}
+                  >
+                    <span
+                      className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 p-1 pb-2.5 border-b-2 border-transparent select-none"
+                      title="Drag to reorder"
+                      aria-hidden
+                    >
+                      <GripVertical size={14} />
+                    </span>
+                    <TabButton
+                      label={tab.title}
+                      icon={
+                        tab.variant === 'overview' ? (
+                          <LayoutDashboard size={12} />
+                        ) : tab.variant === 'cashflow' ? (
+                          <BarChart2 size={12} />
+                        ) : tab.variant === 'sage_widget' ? (
+                          <Sparkles size={12} />
+                        ) : tab.variant === 'manual' ? (
+                          <LayoutGrid size={12} />
+                        ) : tab.exampleKey === 'spending' ? (
+                          <Receipt size={12} />
+                        ) : (
+                          <TrendingUp size={12} />
+                        )
+                      }
+                      active={activeTab === tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      onClose={
+                        tab.variant === 'cashflow' || tab.variant === 'overview'
+                          ? undefined
+                          : () => void removeTab(tab.id)
+                      }
+                    />
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWidgetPreview(null);
+                    setWidgetPrompt('');
+                    setNewTabModal('choose');
+                  }}
+                  className="flex items-center gap-1 px-3 py-2.5 text-slate-600 hover:text-white transition-colors text-sm mb-[-1px] shrink-0"
+                  title="New view tab"
+                >
+                  <Plus size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManageViewsOpen(true)}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-worthiq-cyan transition-colors shrink-0"
+                >
+                  <SlidersHorizontal size={13} />
+                  <span className="hidden sm:inline">Manage Views</span>
+                </button>
+              </div>
             </div>
 
-            <SageDashboardInsights
-              insights={sageInsights}
-              loading={sageInsightsLoading}
-              error={sageInsightsError}
-              expanded={sageInsightsExpanded}
-              onExpand={() => setSageInsightsExpanded(true)}
-              onCollapse={() => setSageInsightsExpanded(false)}
-              onRequest={() => {
-                setSageInsightsExpanded(true);
-                void fetchSageInsights();
-              }}
-              onRefresh={() => void fetchSageInsights()}
-            />
+            {/* ── Overview: net worth, Sage, account tiles ── */}
+            {activeDashboardTab?.variant === 'overview' && (
+              <>
+                <div className="mb-8">
+                  <NetWorthChart
+                    accounts={accounts}
+                    transactions={transactions}
+                    onBarSegmentClick={onChartBarDrillDown}
+                  />
+                </div>
 
-            {/* ── Account summary tiles + expandable detail ── */}
-            <div ref={accountsSectionRef} className="scroll-mt-28 space-y-6 mb-10">
+                <SageDashboardInsights
+                  insights={sageInsights}
+                  loading={sageInsightsLoading}
+                  error={sageInsightsError}
+                  expanded={sageInsightsExpanded}
+                  onExpand={() => setSageInsightsExpanded(true)}
+                  onCollapse={() => setSageInsightsExpanded(false)}
+                  onRequest={() => {
+                    setSageInsightsExpanded(true);
+                    void fetchSageInsights();
+                  }}
+                  onRefresh={() => void fetchSageInsights()}
+                />
+
+                <div ref={accountsSectionRef} className="scroll-mt-28 space-y-6 mb-10">
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
                 <StatCard
                   label="Cash & Savings"
@@ -619,7 +731,7 @@ export default function Dashboard() {
                 <StatCard
                   label="Net Worth"
                   value={fmt(netWorth)}
-                  sub="Total"
+                  sub="All linked depository, credit & investment"
                   color={netWorth >= 0 ? 'blue' : 'red'}
                 />
                 {investmentAccounts.length > 0 && (
@@ -716,88 +828,15 @@ export default function Dashboard() {
                 </Section>
               )}
             </div>
+              </>
+            )}
 
-            {/* ── View tabs ── */}
-            <div className="border-t border-slate-800 pt-6">
-              <div className="mb-4 space-y-1">
-                <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Views</h2>
-                <p className="text-sm text-slate-400 max-w-2xl">
-                  Open <span className="text-slate-300">Cashflow</span>,{' '}
-                  <span className="text-slate-300">Spending</span>, and{' '}
-                  <span className="text-slate-300">Investments</span> here, or add your own with{' '}
-                  <span className="text-worthiq-cyan">+</span>. Drag the grip on each tab to reorder; use Manage Views to hide tabs.
-                </p>
-              </div>
-              <div className="flex items-center gap-1 mb-0 border-b border-slate-800 pb-0 overflow-x-auto">
-                {dashboardTabs.filter((t) => !t.hidden).map((tab) => (
-                  <div
-                    key={tab.id}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('text/plain', tab.id);
-                      e.dataTransfer.effectAllowed = 'move';
-                      setDraggingTabId(tab.id);
-                    }}
-                    onDragEnd={() => setDraggingTabId(null)}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'move';
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const fromId = e.dataTransfer.getData('text/plain');
-                      if (!fromId || fromId === tab.id) return;
-                      setDashboardTabs((prev) => reorderVisibleDashboardTabs(prev, fromId, tab.id));
-                    }}
-                    className={`flex items-end shrink-0 mb-[-1px] rounded-t-lg transition-opacity ${
-                      draggingTabId === tab.id ? 'opacity-45' : ''
-                    }`}
-                  >
-                    <span
-                      className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 p-1 pb-2.5 border-b-2 border-transparent select-none"
-                      title="Drag to reorder"
-                      aria-hidden
-                    >
-                      <GripVertical size={14} />
-                    </span>
-                    <TabButton
-                      label={tab.title}
-                      icon={
-                        tab.variant === 'cashflow'    ? <BarChart2 size={12} /> :
-                        tab.variant === 'sage_widget' ? <Sparkles size={12} /> :
-                        tab.variant === 'manual'      ? <LayoutGrid size={12} /> :
-                        tab.exampleKey === 'spending' ? <Receipt size={12} /> :
-                                                        <TrendingUp size={12} />
-                      }
-                      active={activeTab === tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      onClose={tab.variant === 'cashflow' ? undefined : () => void removeTab(tab.id)}
-                    />
-                  </div>
-                ))}
-                {/* Add view */}
-                <button
-                  type="button"
-                  onClick={() => { setWidgetPreview(null); setWidgetPrompt(''); setNewTabModal('choose'); }}
-                  className="flex items-center gap-1 px-3 py-2.5 text-slate-600 hover:text-white transition-colors text-sm mb-[-1px] shrink-0"
-                  title="New view tab"
-                >
-                  <Plus size={15} />
-                </button>
-                {/* Manage views */}
-                <button
-                  type="button"
-                  onClick={() => setManageViewsOpen(true)}
-                  className="ml-auto flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-worthiq-cyan transition-colors shrink-0"
-                >
-                  <SlidersHorizontal size={13} />
-                  <span className="hidden sm:inline">Manage Views</span>
-                </button>
-              </div>
-
+            {/* ── Other views (not Overview) ── */}
+            {activeDashboardTab?.variant !== 'overview' && (
+            <div className="border-t border-slate-800 pt-8">
               {/* Cashflow tab */}
               {activeDashboardTab?.variant === 'cashflow' && (
-                <div className="pt-8">
+                <div>
                   <CashflowView transactions={transactions} classifications={classifications} />
                 </div>
               )}
@@ -821,7 +860,7 @@ export default function Dashboard() {
               {activeDashboardTab?.variant === 'example' && activeDashboardTab.exampleKey === 'investments' && (
                 <div className="mb-8 space-y-6">
                   <p className="text-sm text-slate-500 max-w-2xl">
-                    Example: brokerage activity, options vs stock legs, and recent trades — same data as the expandable &ldquo;Options & trades&rdquo; summary above.
+                    Example: brokerage activity, options vs stock legs, and recent trades — same data as the &ldquo;Options & trades&rdquo; section on the Overview tab.
                   </p>
                   {investmentAccounts.length === 0 ? (
                     <InfoBanner color="yellow">Connect a brokerage to see investment activity here.</InfoBanner>
@@ -893,6 +932,7 @@ export default function Dashboard() {
                 />
               )}
             </div>
+            )}
 
             {/* New tab: Sage vs manual — portal to body so fixed overlay isn’t tied to <main overflow-auto> */}
             {mounted &&

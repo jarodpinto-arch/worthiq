@@ -14,11 +14,19 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "WorthIQ™",
   description: "Master Your Capital with AI — personal finance intelligence powered by Sage AI.",
+  openGraph: {
+    title: "WorthIQ™",
+    description: "Master Your Capital with AI — personal finance intelligence powered by Sage AI.",
+  },
+  twitter: {
+    title: "WorthIQ™",
+    description: "Master Your Capital with AI — personal finance intelligence powered by Sage AI.",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "WorthIQ",
+    title: "WorthIQ™",
   },
   other: {
     "mobile-web-app-capable": "yes",
