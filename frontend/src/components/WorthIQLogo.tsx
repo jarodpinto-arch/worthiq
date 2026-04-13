@@ -1,6 +1,6 @@
 /**
  * WorthIQ SVG wordmark — transparent background, no image dependency, crisp at any size.
- * Mark: hybrid candlestick chart + lightning (cyan).
+ * Mark: rising stock chart that resolves into an electric lightning bolt.
  */
 
 import { useId } from "react";
@@ -12,64 +12,84 @@ export type WorthIQLogoProps = {
   variant?: "default" | "hero";
 };
 
-/** Candlesticks + zigzag “strike” read as both chart volatility and a bolt. */
-function BoltChartMark({ filterId }: { filterId: string }) {
-  const cyan = "#46C2E9";
-  const cyanHi = "#7dd8f5";
-  const cyanDeep = "#2fa3c7";
-
+function BoltChartMark({
+  glowId,
+  strikeGradientId,
+  sparkGradientId,
+}: {
+  glowId: string;
+  strikeGradientId: string;
+  sparkGradientId: string;
+}) {
   return (
     <g strokeLinecap="round" strokeLinejoin="round">
-      {/* Glow duplicate */}
-      <g opacity={0.38} filter={`url(#${filterId})`}>
-        {/* Upper spike candle (volatile wick) */}
-        <line x1="27" y1="5" x2="27" y2="9" stroke={cyan} strokeWidth={2} />
-        <rect x="24" y="9" width="6" height="7" rx={0.85} fill={cyan} />
-        <line x1="27" y1="16" x2="27" y2="18" stroke={cyan} strokeWidth={2} />
-        {/* Main candle */}
-        <line x1="14" y1="14" x2="14" y2="19" stroke={cyan} strokeWidth={2.25} />
-        <rect x="10.5" y="19" width="7" height="12" rx={1} fill={cyan} />
-        <line x1="14" y1="31" x2="14" y2="36" stroke={cyan} strokeWidth={2.25} />
-        {/* Lightning / chart breakdown (filled) */}
-        <path
-          d="M 17.5 36.5 L 26.5 38.5 L 20.5 44.5 L 29 46.5 L 22 52 L 31 54 L 14.5 60.5 L 21 51 L 9.5 59 L 18.5 45 L 14 40 L 18.5 34 Z"
-          fill={cyan}
-        />
-        {/* Inline micro-candle on the bolt */}
-        <line x1="23" y1="42" x2="23" y2="44" stroke={cyanHi} strokeWidth={1.4} />
-        <rect x="21.1" y="44" width="3.8" height="4.5" rx={0.45} fill={cyanDeep} />
-        <line x1="23" y1="48.5" x2="23" y2="50" stroke={cyanHi} strokeWidth={1.4} />
-      </g>
-      {/* Crisp foreground */}
-      <g>
-        <line x1="27" y1="5" x2="27" y2="9" stroke={cyanHi} strokeWidth={1.75} />
-        <rect x="24" y="9" width="6" height="7" rx={0.85} fill={cyan} />
-        <line x1="27" y1="16" x2="27" y2="18" stroke={cyanHi} strokeWidth={1.75} />
+      <circle cx="31" cy="35" r="24" fill="url(#markAura)" opacity="0.8" />
 
-        <line x1="14" y1="14" x2="14" y2="19" stroke={cyanHi} strokeWidth={2} />
-        <rect x="10.5" y="19" width="7" height="12" rx={1} fill={cyan} />
-        <line x1="14" y1="31" x2="14" y2="36" stroke={cyanHi} strokeWidth={2} />
+      <g opacity="0.22">
+        <path d="M8 53H39" stroke="#0F766E" strokeWidth="1.5" />
+        <path d="M8 44H39" stroke="#0F766E" strokeWidth="1.5" />
+        <path d="M8 35H39" stroke="#0F766E" strokeWidth="1.5" />
+      </g>
+
+      <g filter={`url(#${glowId})`}>
+        <line x1="12" y1="32" x2="12" y2="47" stroke="#79F5E3" strokeWidth="2.2" />
+        <rect x="8.8" y="36" width="6.4" height="8.6" rx="1.2" fill="#0F766E" />
+
+        <line x1="22" y1="24" x2="22" y2="39" stroke="#79F5E3" strokeWidth="2.2" />
+        <rect x="18.8" y="28" width="6.4" height="8.8" rx="1.2" fill="#14B8A6" />
+
+        <line x1="32" y1="18" x2="32" y2="31" stroke="#A7FFF1" strokeWidth="2.2" />
+        <rect x="28.8" y="21.5" width="6.4" height="8.2" rx="1.2" fill="#22D3EE" />
 
         <path
-          d="M 17.5 36.5 L 26.5 38.5 L 20.5 44.5 L 29 46.5 L 22 52 L 31 54 L 14.5 60.5 L 21 51 L 9.5 59 L 18.5 45 L 14 40 L 18.5 34 Z"
-          fill={cyan}
+          d="M11 44.5 L18 36 L26 38.5 L33 27.5 L39 29.5 L44.5 19"
+          stroke={`url(#${strikeGradientId})`}
+          strokeWidth="4"
+          fill="none"
         />
 
-        <line x1="23" y1="42" x2="23" y2="44" stroke={cyanHi} strokeWidth={1.25} />
-        <rect x="21.1" y="44" width="3.8" height="4.5" rx={0.45} fill={cyanDeep} />
-        <line x1="23" y1="48.5" x2="23" y2="50" stroke={cyanHi} strokeWidth={1.25} />
+        <path
+          d="M42 15 L35.5 28.5 L42.5 29 L36 43 L52 24.5 L44.5 23.5 L49.5 15 Z"
+          fill={`url(#${strikeGradientId})`}
+        />
       </g>
+
+      <path
+        d="M11 44.5 L18 36 L26 38.5 L33 27.5 L39 29.5 L44.5 19"
+        stroke={`url(#${strikeGradientId})`}
+        strokeWidth="3"
+        fill="none"
+      />
+
+      <path
+        d="M42 15 L35.5 28.5 L42.5 29 L36 43 L52 24.5 L44.5 23.5 L49.5 15 Z"
+        fill={`url(#${strikeGradientId})`}
+      />
+
+      <g stroke={`url(#${sparkGradientId})`} strokeWidth="2">
+        <path d="M49 8V12" />
+        <path d="M53.5 10.5H57.5" />
+        <path d="M45.5 11.5L43 9" />
+        <path d="M53.5 15L56.2 17.5" />
+        <path d="M18 17V20" opacity="0.8" />
+      </g>
+
+      <circle cx="49" cy="12" r="1.6" fill="#D9FFFB" />
+      <circle cx="18" cy="16" r="1.2" fill="#79F5E3" opacity="0.9" />
     </g>
   );
 }
 
 export function WorthIQLogo({ className = "h-12 w-auto", variant = "default" }: WorthIQLogoProps) {
   const reactId = useId().replace(/:/g, "");
-  const filterId = `worthiq-bolt-glow-${reactId}`;
+  const glowId = `worthiq-electric-glow-${reactId}`;
+  const strikeGradientId = `worthiq-strike-gradient-${reactId}`;
+  const sparkGradientId = `worthiq-spark-gradient-${reactId}`;
+  const iqGradientId = `worthiq-iq-gradient-${reactId}`;
 
   const mark = (
     <svg
-      viewBox="0 0 248 64"
+      viewBox="0 0 272 72"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={`block ${className}`.trim()}
@@ -77,27 +97,54 @@ export function WorthIQLogo({ className = "h-12 w-auto", variant = "default" }: 
       role="img"
     >
       <defs>
-        <filter id={filterId} x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
+        <radialGradient id="markAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(31 34) rotate(90) scale(28 28)">
+          <stop stopColor="#22D3EE" stopOpacity="0.26" />
+          <stop offset="0.6" stopColor="#14B8A6" stopOpacity="0.14" />
+          <stop offset="1" stopColor="#14B8A6" stopOpacity="0" />
+        </radialGradient>
+
+        <linearGradient id={strikeGradientId} x1="12" y1="48" x2="53" y2="12" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#14B8A6" />
+          <stop offset="0.5" stopColor="#42E8D2" />
+          <stop offset="1" stopColor="#7DD3FC" />
+        </linearGradient>
+
+        <linearGradient id={sparkGradientId} x1="43" y1="18" x2="58" y2="8" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#5EEAD4" />
+          <stop offset="1" stopColor="#D9FFFB" />
+        </linearGradient>
+
+        <linearGradient id={iqGradientId} x1="162" y1="19" x2="220" y2="55" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#99F6E4" />
+          <stop offset="0.45" stopColor="#42E8D2" />
+          <stop offset="1" stopColor="#38BDF8" />
+        </linearGradient>
+
+        <filter id={glowId} x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
         </filter>
       </defs>
 
-      <BoltChartMark filterId={filterId} />
+      <BoltChartMark
+        glowId={glowId}
+        strikeGradientId={strikeGradientId}
+        sparkGradientId={sparkGradientId}
+      />
 
       <text
-        x="43"
-        y="47"
-        fontFamily="-apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
+        x="67"
+        y="49"
+        fontFamily="-apple-system, BlinkMacSystemFont, 'Avenir Next', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
         fontSize="42"
-        letterSpacing="-2"
+        letterSpacing="-2.2"
       >
-        <tspan fill="white" fontWeight="700">
+        <tspan fill="#F8FAFC" fontWeight="700">
           Worth
         </tspan>
-        <tspan fill="#46C2E9" fontWeight="800">
+        <tspan fill={`url(#${iqGradientId})`} fontWeight="800">
           IQ
         </tspan>
-        <tspan fill="#64748b" fontSize="16" fontWeight="700" baselineShift="super">
+        <tspan fill="#7DD3FC" fontSize="15" fontWeight="700" baselineShift="super">
           ™
         </tspan>
       </text>
@@ -106,12 +153,12 @@ export function WorthIQLogo({ className = "h-12 w-auto", variant = "default" }: 
 
   if (variant === "hero") {
     return (
-      <div className="relative mx-auto flex max-w-[min(92vw,30rem)] justify-center sm:max-w-[min(90vw,38rem)] md:max-w-[min(88vw,42rem)]">
+      <div className="relative mx-auto flex max-w-[min(92vw,32rem)] justify-center sm:max-w-[min(90vw,40rem)] md:max-w-[min(88vw,44rem)]">
         <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[200%] w-[120%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#46C2E9]/12 blur-3xl"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[210%] w-[125%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(45,212,191,0.22)_0%,rgba(34,211,238,0.14)_34%,rgba(8,47,73,0)_72%)] blur-3xl"
           aria-hidden
         />
-        <div className="relative drop-shadow-[0_0_40px_rgba(70,194,233,0.4)]">{mark}</div>
+        <div className="relative drop-shadow-[0_0_38px_rgba(45,212,191,0.32)]">{mark}</div>
       </div>
     );
   }
