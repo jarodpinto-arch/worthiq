@@ -157,6 +157,11 @@ export default function Home() {
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-6 pb-20 pt-16 text-center sm:px-10 sm:pt-24">
+        <WorthIQLogo
+          variant="hero"
+          className="h-auto w-[min(78vw,18rem)] sm:w-[min(56vw,20rem)]"
+        />
+
         <div className="backdrop-glow-pulse mb-6 inline-flex items-center gap-2 rounded-full border border-[#46c2e9]/25 bg-[#46c2e9]/[0.08] px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#46c2e9]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#46c2e9]" />
           Now in beta — free for early users

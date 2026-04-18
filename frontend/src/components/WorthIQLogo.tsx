@@ -1,6 +1,6 @@
 /**
- * WorthIQ shared logo component backed by static brand SVG assets.
- * Uses the stacked logo for hero moments and a horizontal wordmark elsewhere.
+ * WorthIQ shared logo component backed by the brand SVG assets.
+ * Uses the horizontal wordmark by default and the stacked logo for hero moments.
  */
 
 export type WorthIQLogoProps = {
@@ -15,8 +15,7 @@ export function WorthIQLogo({ className = "h-12 w-auto", variant = "default" }: 
     variant === "hero"
       ? "/brand/worthiq-logo-stacked.svg"
       : "/brand/worthiq-logo-horizontal.svg";
-
-  const alt = variant === "hero" ? "WorthIQ logo" : "WorthIQ wordmark";
+  const alt = variant === "hero" ? "WorthIQ stacked logo" : "WorthIQ logo";
 
   const mark = (
     <img
@@ -29,12 +28,12 @@ export function WorthIQLogo({ className = "h-12 w-auto", variant = "default" }: 
 
   if (variant === "hero") {
     return (
-      <div className="relative mx-auto flex max-w-[min(92vw,32rem)] justify-center sm:max-w-[min(90vw,40rem)] md:max-w-[min(88vw,44rem)]">
+      <div className="relative mx-auto flex max-w-[min(92vw,22rem)] justify-center sm:max-w-[min(90vw,26rem)] md:max-w-[min(88vw,28rem)]">
         <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[210%] w-[125%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(45,212,191,0.18)_0%,rgba(34,211,238,0.12)_34%,rgba(8,47,73,0)_72%)] blur-3xl"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[180%] w-[180%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(0,225,195,0.15)_0%,rgba(70,194,233,0.08)_40%,rgba(8,47,73,0)_70%)] blur-3xl"
           aria-hidden
         />
-        <div className="relative drop-shadow-[0_0_38px_rgba(45,212,191,0.28)]">{mark}</div>
+        <div className="relative drop-shadow-[0_0_48px_rgba(0,225,195,0.35)]">{mark}</div>
       </div>
     );
   }
