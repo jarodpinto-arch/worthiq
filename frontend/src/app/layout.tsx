@@ -11,16 +11,65 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+const BASE_URL = "https://worthiq.io";
+
 export const metadata: Metadata = {
-  title: "WorthIQ™",
-  description: "Master Your Capital with AI — personal finance intelligence powered by Sage AI.",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "WorthIQ™ — Master Your Capital with AI",
+    template: "%s | WorthIQ™",
+  },
+  description:
+    "Real-time bank-linked insights, Sage AI, and customizable dashboards built for your financial life. Connect all your accounts and master your capital.",
+  keywords: [
+    "personal finance",
+    "net worth tracker",
+    "AI financial insights",
+    "budget tracker",
+    "investment tracker",
+    "Plaid",
+    "Sage AI",
+    "WorthIQ",
+  ],
+  authors: [{ name: "WorthIQ, Inc.", url: BASE_URL }],
+  creator: "WorthIQ, Inc.",
+  publisher: "WorthIQ, Inc.",
   openGraph: {
-    title: "WorthIQ™",
-    description: "Master Your Capital with AI — personal finance intelligence powered by Sage AI.",
+    type: "website",
+    locale: "en_US",
+    url: BASE_URL,
+    siteName: "WorthIQ™",
+    title: "WorthIQ™ — Master Your Capital with AI",
+    description:
+      "Real-time bank-linked insights, Sage AI, and customizable dashboards. Connect all your accounts and master your capital.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "WorthIQ — Personal Finance Intelligence",
+      },
+    ],
   },
   twitter: {
-    title: "WorthIQ™",
-    description: "Master Your Capital with AI — personal finance intelligence powered by Sage AI.",
+    card: "summary_large_image",
+    site: "@worthiq",
+    creator: "@worthiq",
+    title: "WorthIQ™ — Master Your Capital with AI",
+    description:
+      "Real-time bank-linked insights, Sage AI, and customizable dashboards built for your financial life.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   manifest: "/manifest.json",
   appleWebApp: {
