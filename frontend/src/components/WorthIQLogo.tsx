@@ -1,19 +1,27 @@
-/**
- * WorthIQ logo backed by the user-provided raster brand image.
- * Uses the exact uploaded PNG so the site matches the approved artwork.
- */
-
 export type WorthIQLogoProps = {
   className?: string;
   priority?: boolean;
-  variant?: "default" | "hero";
+  variant?: "mark" | "full";
+  decorative?: boolean;
 };
 
-export function WorthIQLogo({ className = "h-12 w-auto" }: WorthIQLogoProps) {
+/**
+ * Shared SVG-backed WorthIQ logo so the mark stays crisp in the navbar, hero, auth,
+ * and favicon-driven surfaces.
+ */
+export function WorthIQLogo({
+  className = "h-12 w-auto",
+  variant = "full",
+  decorative = false,
+}: WorthIQLogoProps) {
+  const src = variant === "mark" ? "/logos/worthiq-mark.svg" : "/logos/worthiq-logo.svg";
+
   return (
     <img
-      src="/brand/worthiq-logo.png"
-      alt="WorthIQ logo"
+      src={src}
+      alt={decorative ? "" : variant === "mark" ? "WorthIQ mark" : "WorthIQ logo"}
+      aria-label={decorative ? undefined : variant === "mark" ? "WorthIQ mark" : "WorthIQ logo"}
+      aria-hidden={decorative}
       className={`block ${className}`.trim()}
       draggable={false}
     />

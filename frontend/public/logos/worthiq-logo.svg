@@ -1,0 +1,57 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="worthiqLogoAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 316) rotate(90) scale(372)">
+      <stop stop-color="#39F7E8" stop-opacity="0.34" />
+      <stop offset="0.52" stop-color="#1BE4D2" stop-opacity="0.16" />
+      <stop offset="1" stop-color="#1BE4D2" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="worthiqLogoRing" x1="210" y1="498" x2="822" y2="126" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#13D6C9" />
+      <stop offset="0.5" stop-color="#71FFF4" />
+      <stop offset="1" stop-color="#21E9D8" />
+    </linearGradient>
+    <linearGradient id="worthiqWordIQ" x1="671" y1="762" x2="854" y2="874" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#77FFF4" />
+      <stop offset="1" stop-color="#29E9DB" />
+    </linearGradient>
+    <filter id="worthiqLogoGlow" x="96" y="22" width="832" height="832" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="28" />
+    </filter>
+    <filter id="worthiqLogoSpark" x="0" y="0" width="1024" height="1024" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="10" />
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="#040708" />
+  <circle cx="512" cy="316" r="360" fill="url(#worthiqLogoAura)" />
+  <circle cx="512" cy="316" r="292" fill="#051617" />
+
+  <g opacity="0.34">
+    <circle cx="512" cy="316" r="274" stroke="#0A2827" stroke-width="18" />
+    <circle cx="512" cy="316" r="256" stroke="#103534" stroke-width="6" />
+    <circle cx="512" cy="316" r="240" stroke="#123F3D" stroke-width="4" />
+  </g>
+
+  <circle cx="512" cy="316" r="300" stroke="url(#worthiqLogoRing)" stroke-width="26" opacity="0.48" filter="url(#worthiqLogoGlow)" />
+  <circle cx="512" cy="316" r="300" stroke="url(#worthiqLogoRing)" stroke-width="16" />
+
+  <path
+    d="M250 516L366 402L430 446L513 328L584 376L775 108L721 126L568 250L500 206L425 313L363 272L250 516Z"
+    fill="white"
+  />
+
+  <g opacity="0.92" filter="url(#worthiqLogoSpark)">
+    <circle cx="208" cy="428" r="6" fill="#64FFF0" />
+    <circle cx="275" cy="216" r="5" fill="#64FFF0" />
+    <circle cx="767" cy="206" r="7" fill="#64FFF0" />
+    <circle cx="837" cy="387" r="6" fill="#64FFF0" />
+    <circle cx="766" cy="552" r="5" fill="#64FFF0" />
+    <circle cx="290" cy="574" r="5" fill="#64FFF0" />
+  </g>
+
+  <text x="186" y="810" font-family="-apple-system, BlinkMacSystemFont, 'Avenir Next', 'Segoe UI', system-ui, sans-serif" font-size="152" font-weight="900" letter-spacing="-8">
+    <tspan fill="white">WORTH</tspan>
+    <tspan fill="url(#worthiqWordIQ)">IQ</tspan>
+  </text>
+  <text x="797" y="736" font-family="-apple-system, BlinkMacSystemFont, 'Avenir Next', 'Segoe UI', system-ui, sans-serif" font-size="38" font-weight="800" fill="white">TM</text>
+</svg>

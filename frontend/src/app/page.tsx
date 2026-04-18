@@ -1,4 +1,5 @@
 import { MarketingBackdrop } from "../components/MarketingBackdrop";
+import { WorthIQLogo } from "../components/WorthIQLogo";
 import { WorthIQLogoNav } from "../components/WorthIQLogoNav";
 import { TransitionLink } from "../components/PageTransitionProvider";
 import { Footer } from "../components/Footer";
@@ -156,7 +157,7 @@ export default function Home() {
 
       {/* ── Nav ─────────────────────────────────────────────────────────────── */}
       <nav className="relative z-20 flex items-center justify-between px-6 py-5 sm:px-10">
-        <WorthIQLogoNav className="h-9 w-auto sm:h-10" />
+        <WorthIQLogoNav className="h-10 w-10 sm:h-12 sm:w-12" />
         <div className="flex items-center gap-3">
           <TransitionLink
             href="/login"
@@ -180,10 +181,10 @@ export default function Home() {
           Now in beta — free for early users
         </div>
 
-        <h1 className="animate-logo-settle mt-4 text-5xl font-black leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
-          Master Your Capital<br />
-          <span className="text-[#46c2e9]">with AI</span>
-        </h1>
+        <h1 className="sr-only">WorthIQ - Master Your Capital with AI</h1>
+        <div className="logo-wrap hero animate-logo-settle mt-4">
+          <WorthIQLogo className="h-auto w-[min(86vw,520px)]" variant="full" />
+        </div>
 
         <p className="animate-fade-up-delay-1 mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg">
           Your own personal finance intelligence — real-time bank-linked insights, Sage AI, and customizable dashboards built for your wants and needs.

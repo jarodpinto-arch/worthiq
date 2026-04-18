@@ -19,6 +19,34 @@ body {
   background: var(--worthiq-surface);
 }
 
+.logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .logo-wrap.hero:hover img {
+    filter: drop-shadow(0 0 12px rgba(33, 255, 220, 0.45));
+  }
+
+  .logo-wrap.hero {
+    animation: worthiq-logo-pulse 5.2s ease-in-out infinite;
+  }
+
+  @keyframes worthiq-logo-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      filter: drop-shadow(0 0 0 rgba(33, 255, 220, 0));
+    }
+    50% {
+      transform: scale(1.012);
+      filter: drop-shadow(0 0 14px rgba(33, 255, 220, 0.18));
+    }
+  }
+}
+
 @layer components {
   /* Solid white CTAs on dark backgrounds (home, auth, connect, empty states) */
   .btn-on-dark-primary {

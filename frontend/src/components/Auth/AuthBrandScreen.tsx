@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { WorthIQLogoNav } from "../WorthIQLogoNav";
-import { markAuthBurst, ringOffsetBlack } from "../../lib/worthiq-logo-mark";
+import { WorthIQLogo } from "../WorthIQLogo";
+import { ringOffsetBlack } from "../../lib/worthiq-logo-mark";
 
 type Phase = "burst" | "main";
 
@@ -97,15 +97,19 @@ export function AuthBrandScreen({ children, tagline, subtitle }: AuthBrandScreen
                       : "auth-logo-post-burst"
                 }`}
               >
-                <WorthIQLogoNav
-                  className={markAuthBurst}
-                  priority
-                  wrapperClassName={`max-w-full ${ringOffsetBlack} transition-[filter] duration-700 ${
+                <div
+                  className={`max-w-full ${ringOffsetBlack} transition-[filter] duration-700 ${
                     phase === "main"
                       ? "drop-shadow-[0_0_42px_rgba(70,194,233,0.42)]"
                       : "drop-shadow-[0_0_88px_rgba(70,194,233,0.58)]"
                   }`}
-                />
+                >
+                  <WorthIQLogo
+                    className="h-auto w-[min(78vw,280px)] sm:w-[320px] md:w-[360px]"
+                    variant="full"
+                    priority
+                  />
+                </div>
               </div>
             </div>
 
