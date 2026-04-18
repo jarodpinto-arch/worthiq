@@ -5,6 +5,61 @@ import { Footer } from "../components/Footer";
 
 // ─── Feature data ──────────────────────────────────────────────────────────────
 
+const STATS = [
+  { value: "66%", label: "of Americans live paycheck to paycheck" },
+  { value: "85%", label: "can't name their exact net worth" },
+  { value: "5+", label: "financial accounts the average person ignores" },
+  { value: "$500B", label: "lost annually to hidden fees & missed returns" },
+];
+
+const PAIN_POINTS = [
+  {
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+        />
+      </svg>
+    ),
+    problem: "Scattered across 5 apps",
+    solution: "Everything in one dashboard",
+    desc: "Checking, savings, credit cards, brokerage, 401k — all disconnected. You never see the full picture.",
+  },
+  {
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+    problem: "No idea where money goes",
+    solution: "Sage AI tells you exactly",
+    desc: "You know you spent too much — but where? Traditional apps give you categories. Sage gives you answers.",
+  },
+  {
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+    problem: "Blindsided by fees & drift",
+    solution: "Proactive alerts & insights",
+    desc: "Subscription creep, underperforming accounts, rising credit utilization. WorthIQ surfaces it before it hurts.",
+  },
+];
+
 const FEATURES = [
   {
     icon: (
@@ -197,6 +252,77 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* ── Stats Bar ──────────────────────────────────────────────────────── */}
+      <section className="relative z-10 border-y border-white/[0.05] bg-[#0a0c10]/70 backdrop-blur-sm">
+        <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
+          <p className="mb-8 text-center text-xs font-bold uppercase tracking-widest text-slate-600">
+            The personal finance reality check
+          </p>
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+            {STATS.map((s) => (
+              <div key={s.value} className="text-center">
+                <p className="text-3xl font-black text-[#46c2e9] sm:text-4xl">{s.value}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Problem / Solution ─────────────────────────────────────────────── */}
+      <section className="relative z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.12),transparent_58%)]" aria-hidden />
+        <div className="absolute inset-0 opacity-[0.06]" aria-hidden
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(70,194,233,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(70,194,233,0.22) 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+          }}
+        />
+        <div className="relative mx-auto max-w-6xl px-6 py-24 sm:px-10">
+          <div className="mb-14 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#46c2e9]">Why WorthIQ exists</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">
+              Personal finance is broken.<br />We&apos;re fixing it.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-400">
+              Banks design apps to show your balance, not your financial health. WorthIQ is built from the ground up to give you intelligence, not just data.
+            </p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-3">
+            {PAIN_POINTS.map((p) => (
+              <div
+                key={p.problem}
+                className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#11141b]"
+              >
+                <div className="border-b border-white/[0.05] bg-[#0e1118] px-5 py-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
+                      {p.icon}
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-red-400/70">The problem</p>
+                      <p className="text-sm font-bold text-slate-300">{p.problem}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-5 py-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <svg className="h-4 w-4 flex-shrink-0 text-[#46c2e9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="text-sm font-bold text-[#46c2e9]">{p.solution}</p>
+                  </div>
+                  <p className="text-sm leading-relaxed text-slate-400">{p.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ── Features ────────────────────────────────────────────────────────── */}
       <section className="relative z-10 mx-auto max-w-6xl px-6 py-24 sm:px-10">
