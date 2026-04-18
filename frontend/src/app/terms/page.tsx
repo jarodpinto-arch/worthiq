@@ -62,7 +62,7 @@ export default function TermsOfService() {
         <Section title="3. Account Registration">
           <p>
             You must provide accurate and complete information when registering. You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. Notify us immediately at{" "}
-            <a href="mailto:support@worthiq.io" className="text-[#46c2e9] hover:underline">support@worthiq.io</a>{" "}
+            <a href="mailto:worthiq2026@gmail.com" className="text-[#46c2e9] hover:underline">worthiq2026@gmail.com</a>{" "}
             if you suspect unauthorized access to your account.
           </p>
         </Section>
@@ -146,7 +146,7 @@ export default function TermsOfService() {
         <Section title="13. Contact">
           <p>
             Questions about these Terms? Contact us at{" "}
-            <a href="mailto:legal@worthiq.io" className="text-[#46c2e9] hover:underline">legal@worthiq.io</a>.
+            <a href="mailto:worthiq2026@gmail.com" className="text-[#46c2e9] hover:underline">worthiq2026@gmail.com</a>.
           </p>
         </Section>
       </main>

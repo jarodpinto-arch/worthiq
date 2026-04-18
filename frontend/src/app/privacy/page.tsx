@@ -156,14 +156,14 @@ export default function PrivacyPolicy() {
           </ul>
           <p className="mt-3">
             To exercise these rights, contact us at{" "}
-            <a href="mailto:privacy@worthiq.io" className="text-[#46c2e9] hover:underline">privacy@worthiq.io</a>.
+            <a href="mailto:worthiq2026@gmail.com" className="text-[#46c2e9] hover:underline">worthiq2026@gmail.com</a>.
           </p>
         </Section>
 
         <Section title="7. Children's Privacy">
           <p>
             WorthIQ is not directed to individuals under 18 years of age. We do not knowingly collect personal information from children. If you become aware that a child has provided us with personal information, please contact{" "}
-            <a href="mailto:privacy@worthiq.io" className="text-[#46c2e9] hover:underline">privacy@worthiq.io</a>.
+            <a href="mailto:worthiq2026@gmail.com" className="text-[#46c2e9] hover:underline">worthiq2026@gmail.com</a>.
           </p>
         </Section>
 
@@ -176,7 +176,7 @@ export default function PrivacyPolicy() {
         <Section title="9. Contact Us">
           <p>If you have questions about this Privacy Policy, please contact us:</p>
           <Ul items={[
-            { label: "Email", desc: "privacy@worthiq.io" },
+            { label: "Email", desc: "worthiq2026@gmail.com" },
             { label: "Website", desc: "worthiq.io" },
           ]} />
         </Section>

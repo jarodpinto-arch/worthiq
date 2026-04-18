@@ -214,14 +214,14 @@ export default function SecurityPage() {
             We take security reports seriously. If you've discovered a vulnerability, please disclose it responsibly by emailing us directly.
           </p>
           <a
-            href="mailto:security@worthiq.io"
+            href="mailto:worthiq2026@gmail.com"
             className="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#46c2e9]/25 bg-[#46c2e9]/[0.08] px-6 py-3 text-sm font-semibold text-[#46c2e9] transition hover:bg-[#46c2e9]/[0.14]"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
-            security@worthiq.io
+            worthiq2026@gmail.com
           </a>
         </div>
       </section>

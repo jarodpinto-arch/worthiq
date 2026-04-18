@@ -14,7 +14,7 @@ const COMPANY_LINKS = [
   { label: "Security", href: "/security" },
   { label: "Blog", href: "#" },
   { label: "Careers", href: "#" },
-  { label: "Contact", href: "mailto:hello@worthiq.io" },
+  { label: "Contact", href: "mailto:worthiq2026@gmail.com" },
 ];
 
 const LEGAL_LINKS = [
