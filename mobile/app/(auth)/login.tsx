@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Image,
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { login } from "../../src/lib/api";
 import { isBiometricsAvailable, setBiometricsEnabled } from "../../src/lib/biometrics";
-import { theme, wordmarkIqTight } from "../../src/theme";
+import { theme } from "../../src/theme";
 
 export default function LoginScreen() {
   const [email, setEmail]       = useState("");
@@ -53,10 +53,11 @@ export default function LoginScreen() {
     >
       {/* Logo + headline */}
       <View style={styles.hero}>
-        <Text style={styles.logoIQ}>
-          Worth<Text style={[wordmarkIqTight, { color: theme.cyan }]}>IQ</Text>
-        </Text>
-        <Text style={styles.tagline}>Master Your Capital with AI</Text>
+        <Image
+          source={require("../../assets/splash.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.sub}>Personal finance intelligence</Text>
       </View>
 
@@ -111,9 +112,8 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root:          { flex: 1, backgroundColor: theme.bg, justifyContent: "center", paddingHorizontal: 28 },
   hero:          { alignItems: "center", marginBottom: 48 },
-  logoIQ:        { fontSize: 48, fontWeight: "900", color: theme.text, letterSpacing: -2 },
-  tagline:       { marginTop: 12, fontSize: 17, fontWeight: "700", color: theme.text, textAlign: "center" },
-  sub:           { marginTop: 6, fontSize: 13, color: theme.textMuted, textAlign: "center" },
+  logo:          { width: 220, height: 220, marginBottom: 4 },
+  sub:           { marginTop: 4, fontSize: 13, color: theme.textMuted, textAlign: "center" },
   form:          { gap: 12 },
   input:         {
     backgroundColor: theme.panel,

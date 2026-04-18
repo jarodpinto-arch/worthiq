@@ -1,0 +1,46 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 214) rotate(90) scale(208)">
+      <stop stop-color="#22F5D7" stop-opacity="0.25" />
+      <stop offset="0.58" stop-color="#10D6C2" stop-opacity="0.14" />
+      <stop offset="1" stop-color="#10D6C2" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="ringStroke" x1="110" y1="312" x2="410" y2="146" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#19E4CB" />
+      <stop offset="0.52" stop-color="#61FFF2" />
+      <stop offset="1" stop-color="#0FD8C5" />
+    </linearGradient>
+    <filter id="ringGlow" x="50" y="50" width="412" height="412" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="18" />
+    </filter>
+    <filter id="sparkGlow" x="0" y="0" width="512" height="512" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="7" />
+    </filter>
+  </defs>
+
+  <circle cx="256" cy="214" r="194" fill="url(#bgGlow)" />
+  <circle cx="256" cy="214" r="166" fill="#031514" />
+
+  <g opacity="0.36">
+    <circle cx="256" cy="214" r="154" stroke="#0C2C2A" stroke-width="10" />
+    <circle cx="256" cy="214" r="143" stroke="#0D302D" stroke-width="4" />
+    <circle cx="256" cy="214" r="134" stroke="#12413C" stroke-width="3" />
+  </g>
+
+  <circle cx="256" cy="214" r="168" stroke="url(#ringStroke)" stroke-width="18" opacity="0.45" filter="url(#ringGlow)" />
+  <circle cx="256" cy="214" r="168" stroke="url(#ringStroke)" stroke-width="12" />
+
+  <path
+    d="M131 327 L200 258 L245 287 L296 213 L347 245 L430 99 L386 111 L305 182 L255 152 L202 224 L162 198 L131 327 Z"
+    fill="white"
+  />
+
+  <g opacity="0.95" filter="url(#sparkGlow)">
+    <circle cx="96" cy="274" r="4" fill="#5AFFF2" />
+    <circle cx="128" cy="206" r="3.5" fill="#5AFFF2" />
+    <circle cx="396" cy="169" r="5" fill="#5AFFF2" />
+    <circle cx="431" cy="247" r="4" fill="#5AFFF2" />
+    <circle cx="350" cy="363" r="4" fill="#5AFFF2" />
+    <circle cx="150" cy="351" r="4" fill="#5AFFF2" />
+  </g>
+</svg>

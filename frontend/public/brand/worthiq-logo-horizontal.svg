@@ -1,0 +1,41 @@
+<svg width="1200" height="300" viewBox="0 0 1200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 130) rotate(90) scale(122)">
+      <stop stop-color="#22F5D7" stop-opacity="0.25" />
+      <stop offset="0.58" stop-color="#10D6C2" stop-opacity="0.14" />
+      <stop offset="1" stop-color="#10D6C2" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="ringStroke" x1="65" y1="190" x2="255" y2="84" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#19E4CB" />
+      <stop offset="0.52" stop-color="#61FFF2" />
+      <stop offset="1" stop-color="#0FD8C5" />
+    </linearGradient>
+    <linearGradient id="iqFill" x1="760" y1="112" x2="944" y2="214" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6BFFF4" />
+      <stop offset="1" stop-color="#13E0C9" />
+    </linearGradient>
+    <filter id="ringGlow" x="0" y="0" width="320" height="320" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="11" />
+    </filter>
+  </defs>
+
+  <circle cx="160" cy="130" r="122" fill="url(#bgGlow)" />
+  <circle cx="160" cy="130" r="96" fill="#031514" />
+  <g opacity="0.34">
+    <circle cx="160" cy="130" r="89" stroke="#0C2C2A" stroke-width="8" />
+    <circle cx="160" cy="130" r="82" stroke="#103531" stroke-width="3" />
+  </g>
+  <circle cx="160" cy="130" r="98" stroke="url(#ringStroke)" stroke-width="14" opacity="0.45" filter="url(#ringGlow)" />
+  <circle cx="160" cy="130" r="98" stroke="url(#ringStroke)" stroke-width="8" />
+
+  <path
+    d="M86 198 L126 158 L151 176 L182 131 L211 151 L275 42 L244 50 L186 100 L157 83 L126 126 L102 110 L86 198 Z"
+    fill="white"
+  />
+
+  <text x="332" y="212" font-family="-apple-system, BlinkMacSystemFont, 'Avenir Next', 'Segoe UI', system-ui, sans-serif" font-size="136" font-weight="900" letter-spacing="-6">
+    <tspan fill="white">Worth</tspan>
+    <tspan fill="url(#iqFill)">IQ</tspan>
+  </text>
+  <text x="1048" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Avenir Next', 'Segoe UI', system-ui, sans-serif" font-size="34" font-weight="800" fill="#76FFF3">TM</text>
+</svg>

@@ -9,11 +9,12 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { register } from "../../src/lib/api";
 import { isBiometricsAvailable, setBiometricsEnabled } from "../../src/lib/biometrics";
-import { theme, wordmarkIqTight } from "../../src/theme";
+import { theme } from "../../src/theme";
 
 export default function SignupScreen() {
   const [name, setName] = useState("");
@@ -63,9 +64,11 @@ export default function SignupScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.hero}>
-        <Text style={styles.logoIQ}>
-          Worth<Text style={[wordmarkIqTight, { color: theme.cyan }]}>IQ</Text>
-        </Text>
+        <Image
+          source={require("../../assets/splash.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.tagline}>Create your account</Text>
       </View>
 
@@ -130,8 +133,8 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.bg, justifyContent: "center", paddingHorizontal: 28 },
   hero: { alignItems: "center", marginBottom: 40 },
-  logoIQ: { fontSize: 42, fontWeight: "900", color: theme.text, letterSpacing: -2 },
-  tagline: { marginTop: 10, fontSize: 16, fontWeight: "600", color: theme.textMuted, textAlign: "center" },
+  logo: { width: 210, height: 210, marginBottom: 2 },
+  tagline: { marginTop: 2, fontSize: 16, fontWeight: "600", color: theme.textMuted, textAlign: "center" },
   form: { gap: 12 },
   input: {
     backgroundColor: theme.panel,

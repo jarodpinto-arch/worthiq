@@ -1,0 +1,56 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 346) rotate(90) scale(380)">
+      <stop stop-color="#22F5D7" stop-opacity="0.28" />
+      <stop offset="0.58" stop-color="#10D6C2" stop-opacity="0.15" />
+      <stop offset="1" stop-color="#10D6C2" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="ringStroke" x1="214" y1="530" x2="810" y2="198" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#19E4CB" />
+      <stop offset="0.52" stop-color="#61FFF2" />
+      <stop offset="1" stop-color="#0FD8C5" />
+    </linearGradient>
+    <linearGradient id="iqFill" x1="628" y1="732" x2="846" y2="880" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6BFFF4" />
+      <stop offset="1" stop-color="#13E0C9" />
+    </linearGradient>
+    <filter id="ringGlow" x="80" y="48" width="864" height="864" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="28" />
+    </filter>
+    <filter id="sparkGlow" x="0" y="0" width="1024" height="1024" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="10" />
+    </filter>
+  </defs>
+
+  <circle cx="512" cy="346" r="380" fill="url(#bgGlow)" />
+  <circle cx="512" cy="346" r="300" fill="#031514" />
+
+  <g opacity="0.36">
+    <circle cx="512" cy="346" r="278" stroke="#0C2C2A" stroke-width="16" />
+    <circle cx="512" cy="346" r="258" stroke="#0D302D" stroke-width="6" />
+    <circle cx="512" cy="346" r="242" stroke="#12413C" stroke-width="4" />
+  </g>
+
+  <circle cx="512" cy="346" r="302" stroke="url(#ringStroke)" stroke-width="26" opacity="0.48" filter="url(#ringGlow)" />
+  <circle cx="512" cy="346" r="302" stroke="url(#ringStroke)" stroke-width="16" />
+
+  <path
+    d="M261 548 L385 423 L467 476 L558 341 L653 400 L801 141 L722 161 L575 291 L486 242 L403 359 L329 314 L261 548 Z"
+    fill="white"
+  />
+
+  <g opacity="0.95" filter="url(#sparkGlow)">
+    <circle cx="206" cy="479" r="6" fill="#5AFFF2" />
+    <circle cx="268" cy="363" r="5" fill="#5AFFF2" />
+    <circle cx="793" cy="293" r="7" fill="#5AFFF2" />
+    <circle cx="852" cy="428" r="6" fill="#5AFFF2" />
+    <circle cx="693" cy="642" r="6" fill="#5AFFF2" />
+    <circle cx="306" cy="624" r="6" fill="#5AFFF2" />
+  </g>
+
+  <text x="230" y="828" font-family="-apple-system, BlinkMacSystemFont, 'Avenir Next', 'Segoe UI', system-ui, sans-serif" font-size="152" font-weight="900" letter-spacing="-8">
+    <tspan fill="white">Worth</tspan>
+    <tspan fill="url(#iqFill)">IQ</tspan>
+  </text>
+  <text x="862" y="707" font-family="-apple-system, BlinkMacSystemFont, 'Avenir Next', 'Segoe UI', system-ui, sans-serif" font-size="38" font-weight="800" fill="#76FFF3">TM</text>
+</svg>

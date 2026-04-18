@@ -1,21 +1,63 @@
 import { MarketingBackdrop } from "../components/MarketingBackdrop";
-import { WorthIQLogoNav } from "../components/WorthIQLogoNav";
 import { TransitionLink } from "../components/PageTransitionProvider";
 import { Footer } from "../components/Footer";
+import { WorthIQLogo } from "../components/WorthIQLogo";
 
-// ─── Feature data ──────────────────────────────────────────────────────────────
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const STATS = [
+  { value: "66%", label: "of Americans live paycheck to paycheck" },
+  { value: "85%", label: "can't name their exact net worth" },
+  { value: "5+", label: "financial accounts the average person ignores" },
+  { value: "$500B", label: "lost annually to hidden fees & missed returns" },
+];
+
+const PAIN_POINTS = [
+  {
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+      </svg>
+    ),
+    problem: "Scattered across 5 apps",
+    solution: "Everything in one dashboard",
+    desc: "Checking, savings, credit cards, brokerage, 401k — all disconnected. You never see the full picture.",
+  },
+  {
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    problem: "No idea where money goes",
+    solution: "Sage AI tells you exactly",
+    desc: "You know you spent too much — but where? Traditional apps give you categories. Sage gives you answers.",
+  },
+  {
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    problem: "Blindsided by fees & drift",
+    solution: "Proactive alerts & insights",
+    desc: "Subscription creep, underperforming accounts, rising credit utilization. WorthIQ surfaces it before it hurts.",
+  },
+];
 
 const FEATURES = [
   {
     icon: (
       <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
       </svg>
     ),
     title: "Real-Time Net Worth",
-    description:
-      "Connect every bank, brokerage, and credit card. Watch your net worth update live as transactions come in — no manual entry, ever.",
+    description: "Connect every bank, brokerage, and credit card. Watch your net worth update live as transactions come in — no manual entry.",
   },
   {
     icon: (
@@ -25,8 +67,7 @@ const FEATURES = [
       </svg>
     ),
     title: "Sage AI Insights",
-    description:
-      "Your personal finance AI. Sage analyzes your spending patterns, flags anomalies, and surfaces actionable insights — all in plain English.",
+    description: "Your personal finance AI. Sage analyzes spending patterns, flags anomalies, and surfaces actionable insights in plain English.",
   },
   {
     icon: (
@@ -36,8 +77,17 @@ const FEATURES = [
       </svg>
     ),
     title: "Cashflow Dashboard",
-    description:
-      "Monthly income vs. expenses, by category. Understand exactly where your money flows and where to trim — without the spreadsheet.",
+    description: "Monthly income vs. expenses by category. Understand exactly where your money flows and where to optimize.",
+  },
+  {
+    icon: (
+      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    title: "Investment Tracking",
+    description: "Link your brokerage and see all holdings, trades, and portfolio activity alongside everyday spending — one place.",
   },
   {
     icon: (
@@ -47,19 +97,7 @@ const FEATURES = [
       </svg>
     ),
     title: "Customizable Views",
-    description:
-      "Build the dashboard you actually want. Reorder tabs, pin favorite views, and set your default landing page to match how you think.",
-  },
-  {
-    icon: (
-      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-      </svg>
-    ),
-    title: "Investment Tracking",
-    description:
-      "Link your brokerage accounts and see all trades, holdings, and portfolio activity alongside your everyday spending in one place.",
+    description: "Build the dashboard you actually want. Reorder tabs, pin views, and set your default landing page.",
   },
   {
     icon: (
@@ -69,8 +107,7 @@ const FEATURES = [
       </svg>
     ),
     title: "Bank-Level Security",
-    description:
-      "256-bit TLS encryption in transit, AES-256 at rest. We use Plaid — your credentials never touch our servers.",
+    description: "256-bit TLS + AES-256 at rest. We use Plaid — your credentials never touch our servers. Read-only access only.",
   },
 ];
 
@@ -78,17 +115,17 @@ const STEPS = [
   {
     num: "01",
     title: "Create your account",
-    desc: "Sign up in under 60 seconds. No credit card required.",
+    desc: "Sign up in under 60 seconds with email or Google. No credit card required.",
   },
   {
     num: "02",
     title: "Connect your accounts",
-    desc: "Securely link banks, credit cards, and brokerages via Plaid. Read-only access.",
+    desc: "Securely link banks, credit cards, and brokerages via Plaid. Completely read-only.",
   },
   {
     num: "03",
     title: "Master your capital",
-    desc: "Watch Sage AI surface insights, track net worth live, and take control.",
+    desc: "Watch Sage AI surface insights, track net worth live, and finally take control.",
   },
 ];
 
@@ -101,10 +138,7 @@ export default function Home() {
 
       {/* ── Nav ─────────────────────────────────────────────────────────────── */}
       <nav className="relative z-20 flex items-center justify-between px-6 py-5 sm:px-10">
-        <span className="text-xl font-black tracking-tight text-white">
-          Worth<span className="text-[#46c2e9]">IQ</span>
-          <sup className="ml-0.5 text-[10px] font-bold text-slate-500">™</sup>
-        </span>
+        <WorthIQLogo className="h-9 w-auto sm:h-10" />
         <div className="flex items-center gap-3">
           <TransitionLink
             href="/login"
@@ -122,25 +156,26 @@ export default function Home() {
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <main className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-6 pb-24 pt-16 text-center sm:px-10 sm:pt-24">
+      <section className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-6 pb-20 pt-16 text-center sm:px-10 sm:pt-24">
         <div className="backdrop-glow-pulse mb-6 inline-flex items-center gap-2 rounded-full border border-[#46c2e9]/25 bg-[#46c2e9]/[0.08] px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#46c2e9]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#46c2e9]" />
           Now in beta — free for early users
         </div>
 
         <h1 className="animate-logo-settle mt-4 text-5xl font-black leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
-          Master Your Capital<br />
-          <span className="text-[#46c2e9]">with AI</span>
+          Most people have<br />
+          no idea what<br />
+          <span className="text-[#46c2e9]">they're worth.</span>
         </h1>
 
-        <p className="animate-fade-up-delay-1 mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg">
-          Your own personal finance intelligence — real-time bank-linked insights, Sage AI, and customizable dashboards built for your wants and needs.
+        <p className="animate-fade-up-delay-1 mt-6 max-w-2xl text-base leading-relaxed text-slate-400 sm:text-lg">
+          WorthIQ connects all your accounts, applies AI, and gives you a single command center for your financial life. Real-time net worth, Sage AI insights, cashflow breakdowns — finally all in one place.
         </p>
 
         <div className="animate-fade-up-delay-2 mt-10 flex flex-col items-center gap-3 sm:flex-row">
           <TransitionLink
             href="/signup"
-            className="btn-on-dark-primary btn-on-dark-primary--offset-black w-full sm:w-auto sm:px-10"
+            className="btn-on-dark-primary btn-on-dark-primary--offset-black w-full sm:w-auto sm:px-12"
           >
             Get Started Free
           </TransitionLink>
@@ -151,87 +186,153 @@ export default function Home() {
             Try the Demo →
           </TransitionLink>
         </div>
-
         <p className="mt-4 text-xs text-slate-500">
-          No credit card required · Read-only bank access · Cancel anytime
+          No credit card · Read-only bank access · Cancel anytime
         </p>
 
-        {/* Mock dashboard preview */}
-        <div className="animate-fade-up-delay-3 relative mt-16 w-full overflow-hidden rounded-2xl border border-white/[0.08] bg-[#11141b] shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+        {/* Dashboard preview */}
+        <div className="animate-fade-up-delay-3 relative mt-16 w-full overflow-hidden rounded-2xl border border-white/[0.08] bg-[#11141b] shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
+          {/* Browser chrome */}
           <div className="flex items-center gap-1.5 border-b border-white/[0.06] bg-[#0a0c10]/80 px-4 py-3">
             <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
             <span className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
             <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-            <span className="ml-3 text-xs font-medium text-slate-500">app.worthiq.io/dashboard</span>
+            <span className="ml-3 flex items-center gap-1.5 rounded-md bg-white/[0.05] px-3 py-1 text-xs font-medium text-slate-500">
+              <svg className="h-3 w-3 text-[#46c2e9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              app.worthiq.io/dashboard
+            </span>
           </div>
+          {/* Stat tiles */}
           <div className="grid grid-cols-2 gap-px bg-white/[0.04] sm:grid-cols-4">
             {[
-              { label: "Net Worth", value: "$284,920", color: "text-[#46c2e9]" },
-              { label: "Cash & Savings", value: "$48,310", color: "text-[#52b788]" },
-              { label: "Investments", value: "$241,200", color: "text-[#a78bfa]" },
-              { label: "Credit", value: "$4,590", color: "text-[#e63946]" },
+              { label: "Net Worth", value: "$284,920", color: "text-[#46c2e9]", delta: "+$4,210 this month" },
+              { label: "Cash & Savings", value: "$48,310", color: "text-[#52b788]", delta: "3 accounts" },
+              { label: "Investments", value: "$241,200", color: "text-[#a78bfa]", delta: "Brokerage + 401k" },
+              { label: "Credit", value: "$4,590", color: "text-[#e63946]", delta: "2 cards" },
             ].map((tile) => (
-              <div key={tile.label} className="bg-[#11141b] px-5 py-5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{tile.label}</p>
-                <p className={`mt-2 text-xl font-black ${tile.color}`}>{tile.value}</p>
+              <div key={tile.label} className="bg-[#11141b] px-4 py-4 sm:px-5 sm:py-5">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">{tile.label}</p>
+                <p className={`mt-2 text-lg font-black sm:text-xl ${tile.color}`}>{tile.value}</p>
+                <p className="mt-1 text-[10px] text-slate-600">{tile.delta}</p>
               </div>
             ))}
           </div>
-          <div className="relative h-32 overflow-hidden bg-[#0e1118] px-4 pt-4">
-            {/* Fake chart sparkline */}
-            <svg className="h-full w-full opacity-60" viewBox="0 0 400 80" preserveAspectRatio="none">
+          {/* Chart area */}
+          <div className="relative h-28 overflow-hidden bg-[#0e1118] sm:h-36">
+            <svg className="h-full w-full opacity-70" viewBox="0 0 800 100" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#46c2e9" stopOpacity="0.3" />
+                  <stop offset="0%" stopColor="#46c2e9" stopOpacity="0.25" />
                   <stop offset="100%" stopColor="#46c2e9" stopOpacity="0" />
                 </linearGradient>
               </defs>
-              <path
-                d="M0,60 C30,58 60,52 90,48 C120,44 150,46 180,38 C210,30 240,22 270,20 C300,18 330,24 360,16 L400,10 L400,80 L0,80 Z"
-                fill="url(#sparkGrad)"
-              />
-              <path
-                d="M0,60 C30,58 60,52 90,48 C120,44 150,46 180,38 C210,30 240,22 270,20 C300,18 330,24 360,16 L400,10"
-                fill="none"
-                stroke="#46c2e9"
-                strokeWidth="2"
-              />
+              <path d="M0,75 C60,72 120,65 180,58 C240,51 300,54 360,44 C420,34 480,26 540,22 C600,18 660,28 720,18 L800,10 L800,100 L0,100 Z" fill="url(#sparkGrad)" />
+              <path d="M0,75 C60,72 120,65 180,58 C240,51 300,54 360,44 C420,34 480,26 540,22 C600,18 660,28 720,18 L800,10" fill="none" stroke="#46c2e9" strokeWidth="2.5" />
+              {/* Data points */}
+              {[[180,58],[360,44],[540,22],[720,18],[800,10]].map(([x,y], i) => (
+                <circle key={i} cx={x} cy={y} r="3.5" fill="#46c2e9" opacity="0.8" />
+              ))}
             </svg>
-            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#11141b] to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#11141b] to-transparent" />
+            {/* Sage insight badge */}
+            <div className="absolute right-4 top-4 hidden items-center gap-2 rounded-xl border border-[#46c2e9]/20 bg-[#11141b]/90 px-3 py-2 backdrop-blur-sm sm:flex">
+              <div className="h-2 w-2 rounded-full bg-[#46c2e9]" />
+              <span className="text-xs font-semibold text-slate-300">Sage: Net worth up 12% YTD</span>
+            </div>
           </div>
         </div>
-      </main>
+      </section>
 
-      {/* ── Features ────────────────────────────────────────────────────────── */}
+      {/* ── Stats bar ───────────────────────────────────────────────────────── */}
+      <section className="relative z-10 border-y border-white/[0.05] bg-[#0a0c10]/70 backdrop-blur-sm">
+        <div className="mx-auto max-w-5xl px-6 py-10 sm:px-10">
+          <p className="mb-8 text-center text-xs font-bold uppercase tracking-widest text-slate-600">
+            The personal finance reality check
+          </p>
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+            {STATS.map((s) => (
+              <div key={s.value} className="text-center">
+                <p className="text-3xl font-black text-[#46c2e9] sm:text-4xl">{s.value}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Problem → Solution ──────────────────────────────────────────────── */}
       <section className="relative z-10 mx-auto max-w-6xl px-6 py-24 sm:px-10">
         <div className="mb-14 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#46c2e9]">Everything in one place</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#46c2e9]">Why WorthIQ exists</p>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">
-            Your finances. Finally intelligent.
+            Personal finance is broken.<br />We're fixing it.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-400">
-            WorthIQ connects all your financial accounts and gives you an AI-powered command center to understand, plan, and grow your wealth.
+            Banks design apps to show your balance — not your financial health. WorthIQ is built from the ground up to give you intelligence, not just data.
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="group rounded-2xl border border-white/[0.06] bg-[#11141b] p-6 transition hover:border-[#46c2e9]/20 hover:bg-[#141820]"
-            >
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-[#46c2e9]/20 bg-[#46c2e9]/[0.08] text-[#46c2e9] transition group-hover:bg-[#46c2e9]/[0.12]">
-                {f.icon}
+        <div className="grid gap-5 sm:grid-cols-3">
+          {PAIN_POINTS.map((p) => (
+            <div key={p.title} className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#11141b]">
+              {/* Problem header */}
+              <div className="border-b border-white/[0.05] bg-[#0e1118] px-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
+                    {p.icon}
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-red-400/70">The problem</p>
+                    <p className="text-sm font-bold text-slate-300">{p.problem}</p>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-bold text-white">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">{f.description}</p>
+              {/* Solution body */}
+              <div className="px-5 py-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <svg className="h-4 w-4 flex-shrink-0 text-[#46c2e9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <p className="text-sm font-bold text-[#46c2e9]">{p.solution}</p>
+                </div>
+                <p className="text-sm leading-relaxed text-slate-400">{p.desc}</p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
+      {/* ── Features grid ───────────────────────────────────────────────────── */}
+      <section className="relative z-10 border-t border-white/[0.05] bg-[#0a0c10]/50">
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:px-10">
+          <div className="mb-14 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#46c2e9]">Everything in one place</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">
+              Your finances. Finally intelligent.
+            </h2>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <div
+                key={f.title}
+                className="group rounded-2xl border border-white/[0.06] bg-[#11141b] p-6 transition hover:border-[#46c2e9]/20 hover:bg-[#141820]"
+              >
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-[#46c2e9]/20 bg-[#46c2e9]/[0.08] text-[#46c2e9] transition group-hover:bg-[#46c2e9]/[0.14]">
+                  {f.icon}
+                </div>
+                <h3 className="font-bold text-white">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-400">{f.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── How it works ────────────────────────────────────────────────────── */}
-      <section className="relative z-10 border-y border-white/[0.05] bg-[#0a0c10]/60 backdrop-blur-sm">
+      <section className="relative z-10 border-y border-white/[0.05] bg-[#0d1017]">
         <div className="mx-auto max-w-5xl px-6 py-24 sm:px-10">
           <div className="mb-14 text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-[#46c2e9]">Get set up in minutes</p>
@@ -255,7 +356,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Security / Trust ─────────────────────────────────────────────────── */}
+      {/* ── Security trust ──────────────────────────────────────────────────── */}
       <section className="relative z-10 mx-auto max-w-5xl px-6 py-24 sm:px-10">
         <div className="overflow-hidden rounded-2xl border border-[#46c2e9]/15 bg-gradient-to-br from-[#11141b] to-[#0d1017]">
           <div className="grid gap-8 p-8 sm:grid-cols-2 sm:p-12">
@@ -271,7 +372,7 @@ export default function Home() {
                 Your data is yours.<br />We just make it useful.
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-slate-400">
-                We take financial data seriously. WorthIQ uses Plaid for all bank connections — meaning your credentials never touch our servers. Everything is encrypted in transit and at rest.
+                WorthIQ uses Plaid for all bank connections — your credentials never touch our servers. Everything is encrypted in transit and at rest.
               </p>
               <TransitionLink
                 href="/security"
@@ -288,10 +389,7 @@ export default function Home() {
                 { title: "Plaid-powered", sub: "Read-only bank access" },
                 { title: "No stored creds", sub: "Your passwords stay yours" },
               ].map((b) => (
-                <div
-                  key={b.title}
-                  className="rounded-xl border border-white/[0.06] bg-[#0a0c10]/60 p-4"
-                >
+                <div key={b.title} className="rounded-xl border border-white/[0.06] bg-[#0a0c10]/60 p-4">
                   <p className="text-sm font-black text-white">{b.title}</p>
                   <p className="mt-0.5 text-xs text-slate-500">{b.sub}</p>
                 </div>
@@ -307,7 +405,7 @@ export default function Home() {
           Ready to know your number?
         </h2>
         <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-slate-400">
-          Join the waitlist and get early access. Free while in beta.
+          Join thousands getting smarter about their money. Free while in beta.
         </p>
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <TransitionLink
@@ -317,15 +415,14 @@ export default function Home() {
             Get Started Free
           </TransitionLink>
           <TransitionLink
-            href="/guest"
+            href="/login"
             className="w-full py-2 text-center text-sm font-semibold text-slate-400 underline decoration-slate-600 underline-offset-4 transition hover:text-white sm:w-auto"
           >
-            Try it without signing up
+            Already have an account? Sign in
           </TransitionLink>
         </div>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
       <Footer variant="marketing" />
     </div>
   );
