@@ -281,7 +281,7 @@ export default function Home() {
 
         <div className="grid gap-5 sm:grid-cols-3">
           {PAIN_POINTS.map((p) => (
-            <div key={p.title} className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#11141b]">
+            <div key={p.problem} className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#11141b]">
               {/* Problem header */}
               <div className="border-b border-white/[0.05] bg-[#0e1118] px-5 py-4">
                 <div className="flex items-center gap-2.5">
