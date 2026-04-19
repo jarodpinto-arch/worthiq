@@ -1,46 +1,51 @@
-<svg width="512" height="512" viewBox="24 8 464 456" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="512" height="512" viewBox="48 18 416 412" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="worthiqMarkAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 226) rotate(90) scale(206)">
-      <stop stop-color="#39F7E8" stop-opacity="0.34" />
-      <stop offset="0.52" stop-color="#1BE4D2" stop-opacity="0.16" />
+    <radialGradient id="worthiqMarkAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 224) rotate(90) scale(190)">
+      <stop stop-color="#39F7E8" stop-opacity="0.12" />
+      <stop offset="0.48" stop-color="#1BE4D2" stop-opacity="0.18" />
       <stop offset="1" stop-color="#1BE4D2" stop-opacity="0" />
     </radialGradient>
-    <linearGradient id="worthiqMarkRing" x1="98" y1="338" x2="422" y2="138" gradientUnits="userSpaceOnUse">
+    <radialGradient id="worthiqMarkInner" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 224) rotate(90) scale(150)">
+      <stop offset="0" stop-color="#021011" />
+      <stop offset="0.75" stop-color="#051617" />
+      <stop offset="1" stop-color="#0A3A38" />
+    </radialGradient>
+    <linearGradient id="worthiqMarkRing" x1="120" y1="352" x2="404" y2="146" gradientUnits="userSpaceOnUse">
       <stop stop-color="#13D6C9" />
-      <stop offset="0.5" stop-color="#71FFF4" />
-      <stop offset="1" stop-color="#21E9D8" />
+      <stop offset="0.5" stop-color="#88FFF7" />
+      <stop offset="1" stop-color="#1CE9D8" />
     </linearGradient>
-    <filter id="worthiqMarkGlow" x="42" y="42" width="428" height="428" filterUnits="userSpaceOnUse">
-      <feGaussianBlur stdDeviation="16" />
+    <filter id="worthiqMarkGlow" x="68" y="44" width="376" height="368" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="15" />
     </filter>
     <filter id="worthiqSparkGlow" x="0" y="0" width="512" height="512" filterUnits="userSpaceOnUse">
       <feGaussianBlur stdDeviation="6" />
     </filter>
   </defs>
 
-  <circle cx="256" cy="226" r="198" fill="url(#worthiqMarkAura)" />
-  <circle cx="256" cy="226" r="160" fill="#051617" />
+  <circle cx="256" cy="224" r="186" fill="url(#worthiqMarkAura)" />
+  <circle cx="256" cy="224" r="148" fill="url(#worthiqMarkInner)" />
 
   <g opacity="0.34">
-    <circle cx="256" cy="226" r="148" stroke="#0A2827" stroke-width="10" />
-    <circle cx="256" cy="226" r="138" stroke="#103534" stroke-width="4" />
-    <circle cx="256" cy="226" r="128" stroke="#123F3D" stroke-width="3" />
+    <circle cx="256" cy="224" r="138" stroke="#0A2827" stroke-width="10" />
+    <circle cx="256" cy="224" r="126" stroke="#103534" stroke-width="4" />
+    <circle cx="256" cy="224" r="116" stroke="#123F3D" stroke-width="3" />
   </g>
 
-  <circle cx="256" cy="226" r="164" stroke="url(#worthiqMarkRing)" stroke-width="18" opacity="0.48" filter="url(#worthiqMarkGlow)" />
-  <circle cx="256" cy="226" r="164" stroke="url(#worthiqMarkRing)" stroke-width="11" />
+  <circle cx="256" cy="224" r="164" stroke="url(#worthiqMarkRing)" stroke-width="22" opacity="0.58" filter="url(#worthiqMarkGlow)" />
+  <circle cx="256" cy="224" r="164" stroke="url(#worthiqMarkRing)" stroke-width="10" />
 
   <path
-    d="M131 341L194 278L230 304L275 239L315 265L415 108L386 118L306 206L271 182L225 247L192 225L131 341Z"
+    d="M144 348L205 286L240 311L288 243L332 274L412 142L385 152L313 221L274 195L228 261L196 239L144 348Z"
     fill="white"
   />
 
   <g opacity="0.9" filter="url(#worthiqSparkGlow)">
-    <circle cx="102" cy="274" r="4" fill="#64FFF0" />
-    <circle cx="134" cy="178" r="3.5" fill="#64FFF0" />
-    <circle cx="410" cy="172" r="4.5" fill="#64FFF0" />
-    <circle cx="428" cy="258" r="4" fill="#64FFF0" />
-    <circle cx="372" cy="326" r="3.5" fill="#64FFF0" />
-    <circle cx="150" cy="348" r="3.5" fill="#64FFF0" />
+    <circle cx="114" cy="272" r="4" fill="#64FFF0" />
+    <circle cx="144" cy="176" r="3.5" fill="#64FFF0" />
+    <circle cx="404" cy="178" r="4.5" fill="#64FFF0" />
+    <circle cx="424" cy="256" r="4" fill="#64FFF0" />
+    <circle cx="368" cy="320" r="3.5" fill="#64FFF0" />
+    <circle cx="166" cy="348" r="3.5" fill="#64FFF0" />
   </g>
 </svg>
