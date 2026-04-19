@@ -14,7 +14,10 @@ export function WorthIQLogo({
   variant = "full",
   decorative = false,
 }: WorthIQLogoProps) {
-  const src = variant === "mark" ? "/logos/worthiq-mark.svg" : "/logos/worthiq-logo-provided.png";
+  const src =
+    variant === "mark"
+      ? "/logos/worthiq-mark.svg"
+      : "/logos/worthiq-logo-provided-transparent.png";
 
   return (
     <img

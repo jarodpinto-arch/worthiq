@@ -186,6 +186,10 @@ export default function Home() {
           <WorthIQLogo className="h-auto w-[min(86vw,520px)]" variant="full" />
         </div>
 
+        <p className="animate-fade-up-delay-1 mt-5 text-2xl font-black tracking-tight text-white sm:text-3xl">
+          Master Your Capital <span className="text-[#46c2e9]">with AI</span>
+        </p>
+
         <p className="animate-fade-up-delay-1 mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg">
           Your own personal finance intelligence — real-time bank-linked insights, Sage AI, and customizable dashboards built for your wants and needs.
         </p>
